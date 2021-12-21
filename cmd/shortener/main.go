@@ -12,9 +12,9 @@ const serverName = "localhost:8080"
 var store = map[string]string{}
 
 func main() {
-	http.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "store: %v\n", store)
-	})
+	// http.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Fprintf(w, "store: %v\n", store)
+	// })
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
