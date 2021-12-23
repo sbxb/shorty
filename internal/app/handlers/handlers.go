@@ -5,16 +5,19 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/sbxb/shorty/internal/app/storage"
 )
 
-func DefaultHandler(store map[string]string, serverName string) http.HandlerFunc {
+func DefaultHandler(store *storage.MapStorage, serverName string) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
+		var id string
 		if r.Method == http.MethodGet {
 			// Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
 			// сокращённого URL и возвращает ответ с кодом 307 и оригинальным URL
 			// в HTTP-заголовке Location.
-			id := strings.TrimLeft(r.URL.Path, "/")
-			if url, ok := store[id]; ok {
+			id = strings.TrimLeft(r.URL.Path, "/")
+			if url, err := store.Get(id); err == nil {
 				rw.Header().Set("Location", url)
 				rw.WriteHeader(http.StatusTemporaryRedirect)
 			} else {
@@ -34,8 +37,7 @@ func DefaultHandler(store map[string]string, serverName string) http.HandlerFunc
 				http.Error(rw, "Bad request", http.StatusBadRequest)
 				return
 			}
-			id := fmt.Sprintf("%d", len(store)+1)
-			store[id] = url
+			id = store.Add(url)
 			rw.WriteHeader(http.StatusCreated)
 			fmt.Fprintf(rw, "http://%s/%s", serverName, id)
 		}
