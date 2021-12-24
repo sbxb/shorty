@@ -12,26 +12,26 @@ import (
 )
 
 func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
-	want_url := "http://localhost:8080/"
+	wantURL := "http://localhost:8080/"
 	tests := []struct {
-		url       string
-		id        string
-		want_code int
+		url      string
+		id       string
+		wantCode int
 	}{
 		{
-			url:       "http://example.com",
-			id:        want_url + "1",
-			want_code: 201,
+			url:      "http://example.com",
+			id:       wantURL + "1",
+			wantCode: 201,
 		},
 		{
-			url:       "http://example.org",
-			id:        want_url + "2",
-			want_code: 201,
+			url:      "http://example.org",
+			id:       wantURL + "2",
+			wantCode: 201,
 		},
 		{
-			url:       "http://local.test",
-			id:        want_url + "3",
-			want_code: 201,
+			url:      "http://local.test",
+			id:       wantURL + "3",
+			wantCode: 201,
 		},
 	}
 
@@ -39,15 +39,16 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, want_url, strings.NewReader(tt.url))
+			request := httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 
 			h := handlers.DefaultHandler(store, "localhost:8080")
 			h.ServeHTTP(w, request)
 			resp := w.Result()
+			defer resp.Body.Close()
 
-			if resp.StatusCode != tt.want_code {
-				t.Errorf("want status code [%d] but got [%d]", tt.want_code, resp.StatusCode)
+			if resp.StatusCode != tt.wantCode {
+				t.Errorf("want status code [%d] but got [%d]", tt.wantCode, resp.StatusCode)
 			}
 
 			resBody, err := io.ReadAll(resp.Body)
@@ -69,6 +70,7 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 			h := handlers.DefaultHandler(store, "localhost:8080")
 			h.ServeHTTP(w, request)
 			resp := w.Result()
+			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusTemporaryRedirect {
 				t.Errorf("want status code [%d] but got [%d]",
@@ -85,31 +87,32 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 }
 
 func TestDefaultHandler_Post_Not_Valid(t *testing.T) {
-	want_url := "http://localhost:8080/"
+	wantURL := "http://localhost:8080/"
 	tests := []struct {
-		url       string
-		id        string
-		want_code int
+		url      string
+		id       string
+		wantCode int
 	}{
 		{
-			url:       "",
-			id:        "Bad request\n",
-			want_code: 400,
+			url:      "",
+			id:       "Bad request\n",
+			wantCode: 400,
 		},
 	}
 	store := storage.NewMapStorage()
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.id, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, want_url, strings.NewReader(tt.url))
+			request := httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 
 			h := handlers.DefaultHandler(store, "localhost:8080")
 			h.ServeHTTP(w, request)
 			resp := w.Result()
+			defer resp.Body.Close()
 
-			if resp.StatusCode != tt.want_code {
-				t.Errorf("want status code [%d] but got [%d]", tt.want_code, resp.StatusCode)
+			if resp.StatusCode != tt.wantCode {
+				t.Errorf("want status code [%d] but got [%d]", tt.wantCode, resp.StatusCode)
 			}
 
 			resBody, err := io.ReadAll(resp.Body)
@@ -125,21 +128,21 @@ func TestDefaultHandler_Post_Not_Valid(t *testing.T) {
 }
 
 func TestDefaultHandler_Get_Not_Valid(t *testing.T) {
-	want_url := "http://localhost:8080/"
+	wantURL := "http://localhost:8080/"
 	tests := []struct {
-		url       string
-		id        string
-		want_code int
+		url      string
+		id       string
+		wantCode int
 	}{
 		{
-			url:       "",
-			id:        want_url + "111111111",
-			want_code: 404,
+			url:      "",
+			id:       wantURL + "111111111",
+			wantCode: 404,
 		},
 		{
-			url:       "",
-			id:        want_url,
-			want_code: 404,
+			url:      "",
+			id:       wantURL,
+			wantCode: 404,
 		},
 	}
 	store := storage.NewMapStorage()
@@ -151,10 +154,11 @@ func TestDefaultHandler_Get_Not_Valid(t *testing.T) {
 			h := handlers.DefaultHandler(store, "localhost:8080")
 			h.ServeHTTP(w, request)
 			resp := w.Result()
+			defer resp.Body.Close()
 
-			if resp.StatusCode != tt.want_code {
+			if resp.StatusCode != tt.wantCode {
 				t.Errorf("want status code [%d] but got [%d]",
-					tt.want_code, resp.StatusCode)
+					tt.wantCode, resp.StatusCode)
 			}
 
 			location := resp.Header.Get("Location")
