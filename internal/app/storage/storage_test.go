@@ -16,8 +16,8 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	for _, url := range urls {
-		id := store.Add(url)
-		urlReturned, err := store.Get(id)
+		id := store.AddURL(url)
+		urlReturned, err := store.GetURL(id)
 		if err != nil {
 			t.Errorf("want [%s] but failed to get one", url)
 		} else if urlReturned != url {
@@ -29,7 +29,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 func TestMemoryStore_Get_Nonexistent(t *testing.T) {
 	store := storage.NewMapStorage()
 	id := "nonexistent_id"
-	urlReturned, err := store.Get(id)
+	urlReturned, err := store.GetURL(id)
 	if err == nil {
 		t.Errorf("got [%s] which is not supposed to exist in storage", urlReturned)
 	}
