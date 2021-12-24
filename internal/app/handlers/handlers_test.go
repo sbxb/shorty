@@ -39,12 +39,10 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url))
-			w := httptest.NewRecorder()
-
-			h := handlers.DefaultHandler(store, "localhost:8080")
-			h.ServeHTTP(w, request)
-			resp := w.Result()
+			resp := getResponse(
+				httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url)),
+				handlers.DefaultHandler(store, "localhost:8080"),
+			)
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tt.wantCode {
@@ -64,12 +62,10 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Get: "+tt.url, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, tt.id, nil)
-			w := httptest.NewRecorder()
-
-			h := handlers.DefaultHandler(store, "localhost:8080")
-			h.ServeHTTP(w, request)
-			resp := w.Result()
+			resp := getResponse(
+				httptest.NewRequest(http.MethodGet, tt.id, nil),
+				handlers.DefaultHandler(store, "localhost:8080"),
+			)
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusTemporaryRedirect {
@@ -103,12 +99,10 @@ func TestDefaultHandler_Post_Not_Valid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.id, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url))
-			w := httptest.NewRecorder()
-
-			h := handlers.DefaultHandler(store, "localhost:8080")
-			h.ServeHTTP(w, request)
-			resp := w.Result()
+			resp := getResponse(
+				httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url)),
+				handlers.DefaultHandler(store, "localhost:8080"),
+			)
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tt.wantCode {
@@ -148,12 +142,10 @@ func TestDefaultHandler_Get_Not_Valid(t *testing.T) {
 	store := storage.NewMapStorage()
 	for _, tt := range tests {
 		t.Run("Get: "+tt.id, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, tt.id, nil)
-			w := httptest.NewRecorder()
-
-			h := handlers.DefaultHandler(store, "localhost:8080")
-			h.ServeHTTP(w, request)
-			resp := w.Result()
+			resp := getResponse(
+				httptest.NewRequest(http.MethodGet, tt.id, nil),
+				handlers.DefaultHandler(store, "localhost:8080"),
+			)
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tt.wantCode {
@@ -164,8 +156,14 @@ func TestDefaultHandler_Get_Not_Valid(t *testing.T) {
 			location := resp.Header.Get("Location")
 
 			if location != tt.url {
-				t.Errorf("want retirned location header [%s] but got [%s]", location, tt.url)
+				t.Errorf("want returned location header [%s] but got [%s]", location, tt.url)
 			}
 		})
 	}
+}
+
+func getResponse(r *http.Request, h http.HandlerFunc) *http.Response {
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	return w.Result()
 }
