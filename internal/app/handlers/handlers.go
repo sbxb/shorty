@@ -40,6 +40,8 @@ func DefaultHandler(store storage.Storage, serverName string) http.HandlerFunc {
 			id = store.AddURL(url)
 			rw.WriteHeader(http.StatusCreated)
 			fmt.Fprintf(rw, "http://%s/%s", serverName, id)
+		} else {
+			http.Error(rw, "Bad request", http.StatusBadRequest)
 		}
 	}
 }
