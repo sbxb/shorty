@@ -12,13 +12,11 @@ import (
 
 func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var id string
-
 		// Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
 		// сокращённого URL и возвращает ответ с кодом 307 и оригинальным URL
 		// в HTTP-заголовке Location.
 		//id = strings.TrimLeft(r.URL.Path, "/")
-		id = strings.TrimLeft(chi.URLParam(r, "id"), "/")
+		id := strings.TrimLeft(chi.URLParam(r, "id"), "/")
 		if url, err := store.GetURL(id); err == nil {
 			rw.Header().Set("Location", url)
 			rw.WriteHeader(http.StatusTemporaryRedirect)
@@ -31,8 +29,6 @@ func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
 
 func PostHandler(store storage.Storage, serverName string) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		var id string
-
 		// Эндпоинт POST / принимает в теле запроса строку URL для сокращения
 		// и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой
 		// строки в теле.
@@ -46,7 +42,7 @@ func PostHandler(store storage.Storage, serverName string) http.HandlerFunc {
 			http.Error(rw, "Bad request", http.StatusBadRequest)
 			return
 		}
-		id = store.AddURL(url)
+		id := store.AddURL(url)
 		rw.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(rw, "http://%s/%s", serverName, id)
 
