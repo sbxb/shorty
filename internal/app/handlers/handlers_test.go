@@ -9,44 +9,74 @@ import (
 
 	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
-	wantURL := "http://localhost:8080/"
+var serverURL = "http://localhost:8080/"
+
+func TestPostHandler_NotValidCases(t *testing.T) {
+	wantCode := 400
 	tests := []struct {
-		url      string
-		id       string
-		wantCode int
+		url string
+		id  string
 	}{
-		{
-			url:      "http://example.com",
-			id:       wantURL + "1",
-			wantCode: 201,
-		},
-		{
-			url:      "http://example.org",
-			id:       wantURL + "2",
-			wantCode: 201,
-		},
-		{
-			url:      "http://local.test",
-			id:       wantURL + "3",
-			wantCode: 201,
-		},
+		{url: ""},
 	}
 
+	// Prepare empty store
 	store := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	router.Post("/", handlers.PostHandler(store, "localhost:8080"))
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			resp := getResponse(
-				httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url)),
-				handlers.DefaultHandler(store, "localhost:8080"),
-			)
+			req := httptest.NewRequest(http.MethodPost, serverURL, strings.NewReader(tt.url))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != tt.wantCode {
-				t.Errorf("want status code [%d] but got [%d]", tt.wantCode, resp.StatusCode)
+			if resp.StatusCode != wantCode {
+				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestPostHandler_ValidCases(t *testing.T) {
+	wantCode := 201
+	tests := []struct {
+		url string
+		id  string
+	}{
+		{
+			url: "http://example.com",
+			id:  "1",
+		},
+		{
+			url: "http://example.org",
+			id:  "2",
+		},
+	}
+
+	// Prepare empty store
+	store := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	router.Post("/", handlers.PostHandler(store, "localhost:8080"))
+
+	for _, tt := range tests {
+		t.Run("Post: "+tt.url, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, serverURL, strings.NewReader(tt.url))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != wantCode {
+				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
 			}
 
 			resBody, err := io.ReadAll(resp.Body)
@@ -54,21 +84,73 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 				t.Fatalf("cannot read response body, should not see this normally")
 			}
 
-			if string(resBody) != tt.id {
-				t.Errorf("want retirned id [%s] but got [%s]", tt.id, resBody)
+			if string(resBody) != serverURL+tt.id {
+				t.Errorf("want returned id [%s],  got [%s]", serverURL+tt.id, resBody)
 			}
 		})
 	}
+}
+
+func TestGetHandler_NotValidCases(t *testing.T) {
+	wantCode := 404
+	tests := []struct {
+		url string
+		id  string
+	}{
+		{id: ""},
+		{id: "NON_EXISTING_ID"},
+	}
+	// Prepare empty store
+	store := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	router.Get("/{id}", handlers.GetHandler(store, "localhost:8080"))
 
 	for _, tt := range tests {
-		t.Run("Get: "+tt.url, func(t *testing.T) {
-			resp := getResponse(
-				httptest.NewRequest(http.MethodGet, tt.id, nil),
-				handlers.DefaultHandler(store, "localhost:8080"),
-			)
+		requestURL := serverURL + tt.id
+		t.Run("Get: "+requestURL, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != http.StatusTemporaryRedirect {
+			if resp.StatusCode != wantCode {
+				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestGetHandler_ValidCases(t *testing.T) {
+	wantCode := 307
+	tests := []struct {
+		url string
+		id  string
+	}{
+		{url: "http://example.com"},
+		{url: "http://example.org"},
+	}
+
+	// Prepare store and fill in test cases' ids
+	store := storage.NewMapStorage()
+	for i, tt := range tests {
+		tests[i].id = store.AddURL(tt.url)
+	}
+
+	router := chi.NewRouter()
+	router.Get("/{id}", handlers.GetHandler(store, "localhost:8080"))
+
+	for _, tt := range tests {
+		requestURL := serverURL + tt.id
+		t.Run("Get: "+requestURL, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != wantCode {
 				t.Errorf("want status code [%d] but got [%d]",
 					http.StatusTemporaryRedirect, resp.StatusCode)
 			}
@@ -80,90 +162,5 @@ func TestDefaultHandler_Post_Get_Valid(t *testing.T) {
 			}
 		})
 	}
-}
 
-func TestDefaultHandler_Post_Not_Valid(t *testing.T) {
-	wantURL := "http://localhost:8080/"
-	tests := []struct {
-		url      string
-		id       string
-		wantCode int
-	}{
-		{
-			url:      "",
-			id:       "Bad request\n",
-			wantCode: 400,
-		},
-	}
-	store := storage.NewMapStorage()
-
-	for _, tt := range tests {
-		t.Run("Post: "+tt.id, func(t *testing.T) {
-			resp := getResponse(
-				httptest.NewRequest(http.MethodPost, wantURL, strings.NewReader(tt.url)),
-				handlers.DefaultHandler(store, "localhost:8080"),
-			)
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.wantCode {
-				t.Errorf("want status code [%d] but got [%d]", tt.wantCode, resp.StatusCode)
-			}
-
-			resBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("cannot read response body, should not see this normally")
-			}
-
-			if string(resBody) != tt.id {
-				t.Errorf("want retirned id [%s] but got [%s]", tt.id, resBody)
-			}
-		})
-	}
-}
-
-func TestDefaultHandler_Get_Not_Valid(t *testing.T) {
-	wantURL := "http://localhost:8080/"
-	tests := []struct {
-		url      string
-		id       string
-		wantCode int
-	}{
-		{
-			url:      "",
-			id:       wantURL + "111111111",
-			wantCode: 404,
-		},
-		{
-			url:      "",
-			id:       wantURL,
-			wantCode: 404,
-		},
-	}
-	store := storage.NewMapStorage()
-	for _, tt := range tests {
-		t.Run("Get: "+tt.id, func(t *testing.T) {
-			resp := getResponse(
-				httptest.NewRequest(http.MethodGet, tt.id, nil),
-				handlers.DefaultHandler(store, "localhost:8080"),
-			)
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.wantCode {
-				t.Errorf("want status code [%d] but got [%d]",
-					tt.wantCode, resp.StatusCode)
-			}
-
-			location := resp.Header.Get("Location")
-
-			if location != tt.url {
-				t.Errorf("want returned location header [%s] but got [%s]", location, tt.url)
-			}
-		})
-	}
-}
-
-func getResponse(r *http.Request, h http.HandlerFunc) *http.Response {
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	return w.Result()
 }

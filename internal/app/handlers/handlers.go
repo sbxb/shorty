@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sbxb/shorty/internal/app/storage"
-
 	"github.com/go-chi/chi/v5"
+	"github.com/sbxb/shorty/internal/app/storage"
 )
 
 func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
