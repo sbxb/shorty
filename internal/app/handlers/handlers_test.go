@@ -7,13 +7,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
 
 	"github.com/go-chi/chi/v5"
 )
 
-var serverURL = "http://localhost:8080/"
+var cfg = config.DefaultConfig
 
 func TestPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
@@ -28,11 +29,11 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Post("/", handlers.PostHandler(store, "localhost:8080"))
+	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, serverURL, strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -65,11 +66,11 @@ func TestPostHandler_ValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Post("/", handlers.PostHandler(store, "localhost:8080"))
+	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, serverURL, strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -84,8 +85,8 @@ func TestPostHandler_ValidCases(t *testing.T) {
 				t.Fatalf("cannot read response body, should not see this normally")
 			}
 
-			if string(resBody) != serverURL+tt.id {
-				t.Errorf("want returned id [%s],  got [%s]", serverURL+tt.id, resBody)
+			if string(resBody) != cfg.FullServerURL()+tt.id {
+				t.Errorf("want returned id [%s],  got [%s]", cfg.FullServerURL()+tt.id, resBody)
 			}
 		})
 	}
@@ -104,10 +105,10 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Get("/{id}", handlers.GetHandler(store, "localhost:8080"))
+	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
 
 	for _, tt := range tests {
-		requestURL := serverURL + tt.id
+		requestURL := cfg.FullServerURL() + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
@@ -139,10 +140,10 @@ func TestGetHandler_ValidCases(t *testing.T) {
 	}
 
 	router := chi.NewRouter()
-	router.Get("/{id}", handlers.GetHandler(store, "localhost:8080"))
+	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
 
 	for _, tt := range tests {
-		requestURL := serverURL + tt.id
+		requestURL := cfg.FullServerURL() + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
