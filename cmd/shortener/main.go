@@ -13,15 +13,11 @@ import (
 func main() {
 	cfg := config.DefaultConfig
 
-	// TODO:
-	// mux := router.NewRouter()
-	// http.ListenAndServe(serverName, r)
-	r := chi.NewRouter()
-
 	store := storage.NewMapStorage()
 
-	r.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
-	r.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
+	router := chi.NewRouter()
+	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
+	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
 
-	http.ListenAndServe(cfg.FullServerName(), r)
+	http.ListenAndServe(cfg.FullServerName(), router)
 }
