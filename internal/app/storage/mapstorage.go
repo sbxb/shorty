@@ -20,6 +20,7 @@ func NewMapStorage() *MapStorage {
 }
 
 func (st *MapStorage) AddURL(url string) (id string) {
+	// TODO There should be more sophisticated algorithm for calculating URL's short id
 	id = strconv.Itoa(len(st.m) + 1)
 	st.m[id] = url
 	return id
