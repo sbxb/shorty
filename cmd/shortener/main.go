@@ -1,10 +1,9 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"time"
+	"os"
 
+	"github.com/sbxb/shorty/internal/app/api"
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
@@ -21,13 +20,7 @@ func main() {
 	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
 	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
 
-	// Set more reasonable timeouts than the default ones
-	srv := &http.Server{
-		Addr:         cfg.FullServerName(),
-		Handler:      router,
-		ReadTimeout:  8 * time.Second,
-		WriteTimeout: 8 * time.Second,
-		IdleTimeout:  36 * time.Second,
-	}
-	log.Fatal(srv.ListenAndServe())
+	server, _ := api.NewHTTPServer(cfg.FullServerName(), router)
+	go server.WaitForInterrupt()
+	os.Exit(server.Run())
 }
