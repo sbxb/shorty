@@ -10,6 +10,7 @@ import (
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
+	u "github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -54,12 +55,15 @@ func TestPostHandler_ValidCases(t *testing.T) {
 	}{
 		{
 			url: "http://example.com",
-			id:  "1",
 		},
 		{
 			url: "http://example.org",
-			id:  "2",
 		},
+	}
+
+	// Fill in test cases' ids
+	for i, tt := range tests {
+		tests[i].id = u.ShortId(tt.url)
 	}
 
 	// Prepare empty store
@@ -133,10 +137,15 @@ func TestGetHandler_ValidCases(t *testing.T) {
 		{url: "http://example.org"},
 	}
 
-	// Prepare store and fill in test cases' ids
-	store := storage.NewMapStorage()
+	// Fill in test cases' ids
 	for i, tt := range tests {
-		tests[i].id = store.AddURL(tt.url)
+		tests[i].id = u.ShortId(tt.url)
+	}
+
+	// Prepare store
+	store := storage.NewMapStorage()
+	for _, tt := range tests {
+		store.AddURL(tt.url, tt.id)
 	}
 
 	router := chi.NewRouter()

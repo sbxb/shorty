@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/storage"
+	u "github.com/sbxb/shorty/internal/app/url"
 )
 
 func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
@@ -36,13 +37,21 @@ func PostHandler(store storage.Storage, serverName string) http.HandlerFunc {
 			http.Error(w, "Server failed to read the request's body", http.StatusInternalServerError)
 			return
 		}
+
 		url := string(b)
 		// TODO There should be some kind of URL validation
 		if url == "" {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
-		id := store.AddURL(url)
+
+		id := u.ShortId(url)
+		err = store.AddURL(url, id)
+		if err != nil {
+			http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(w, "http://%s/%s", serverName, id)
 	}

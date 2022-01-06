@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 )
 
@@ -20,13 +19,12 @@ func NewMapStorage() *MapStorage {
 	return &MapStorage{data: d}
 }
 
-func (st *MapStorage) AddURL(url string) (id string) {
-	// TODO There should be more sophisticated algorithm for calculating URL's short id
-	id = strconv.Itoa(len(st.data) + 1)
+func (st *MapStorage) AddURL(url string, id string) error {
 	st.mu.Lock()
 	st.data[id] = url
 	st.mu.Unlock()
-	return id
+
+	return nil
 }
 
 func (st *MapStorage) GetURL(id string) (string, error) {
@@ -36,5 +34,6 @@ func (st *MapStorage) GetURL(id string) (string, error) {
 	if ok {
 		return url, nil
 	}
+
 	return "", fmt.Errorf("id %s not found", id)
 }
