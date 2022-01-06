@@ -20,10 +20,9 @@ func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
 		if url, err := store.GetURL(id); err == nil {
 			rw.Header().Set("Location", url)
 			rw.WriteHeader(http.StatusTemporaryRedirect)
-		} else {
-			http.NotFound(rw, r)
+			return
 		}
-
+		http.NotFound(rw, r)
 	}
 }
 
@@ -47,6 +46,5 @@ func PostHandler(store storage.Storage, serverName string) http.HandlerFunc {
 		id := store.AddURL(url)
 		rw.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(rw, "http://%s/%s", serverName, id)
-
 	}
 }
