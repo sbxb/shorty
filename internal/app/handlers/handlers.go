@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/storage"
@@ -16,7 +15,7 @@ func GetHandler(store storage.Storage, serverName string) http.HandlerFunc {
 		// ... Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
 		// сокращённого URL и возвращает ответ с кодом 307 и оригинальным URL
 		// в HTTP-заголовке Location ...
-		id := strings.TrimLeft(chi.URLParam(r, "id"), "/")
+		id := chi.URLParam(r, "id")
 		if url, err := store.GetURL(id); err == nil {
 			rw.Header().Set("Location", url)
 			rw.WriteHeader(http.StatusTemporaryRedirect)
