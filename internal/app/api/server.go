@@ -18,7 +18,6 @@ type HTTPServer struct {
 func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
 	// Set more reasonable timeouts than the default ones
 	server := &http.Server{
-		//Addr:         cfg.FullServerName(),
 		Addr:         address,
 		Handler:      router,
 		ReadTimeout:  8 * time.Second,

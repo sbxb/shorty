@@ -30,7 +30,11 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
@@ -70,7 +74,11 @@ func TestPostHandler_ValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Post("/", handlers.PostHandler(store, cfg.FullServerName()))
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
@@ -109,7 +117,11 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
 		requestURL := cfg.FullServerURL() + tt.id
@@ -149,7 +161,11 @@ func TestGetHandler_ValidCases(t *testing.T) {
 	}
 
 	router := chi.NewRouter()
-	router.Get("/{id}", handlers.GetHandler(store, cfg.FullServerName()))
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
 		requestURL := cfg.FullServerURL() + tt.id
