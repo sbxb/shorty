@@ -19,6 +19,8 @@ func NewMapStorage() *MapStorage {
 	return &MapStorage{data: d}
 }
 
+// AddURL saves url and its id
+// MapStorage implementation never returns non-nil error
 func (st *MapStorage) AddURL(url string, id string) error {
 	st.mu.Lock()
 	st.data[id] = url
@@ -27,6 +29,8 @@ func (st *MapStorage) AddURL(url string, id string) error {
 	return nil
 }
 
+// GetURL searches for url by its id
+// MapStorage implementation never returns non-nil error
 func (st *MapStorage) GetURL(id string) (string, error) {
 	st.mu.RLock()
 	url, ok := st.data[id]

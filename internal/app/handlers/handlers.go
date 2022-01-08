@@ -10,6 +10,7 @@ import (
 	u "github.com/sbxb/shorty/internal/app/url"
 )
 
+// URLHandler defines a container for handlers and their dependencies
 type URLHandler struct {
 	Store      storage.Storage
 	ServerName string
