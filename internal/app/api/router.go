@@ -9,6 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// NewRouter creates chi router and handlers container, register handlers and
+// pass dependencies to handlers
 func NewRouter(store storage.Storage, serverName string) http.Handler {
 	router := chi.NewRouter()
 
