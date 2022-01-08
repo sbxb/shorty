@@ -18,14 +18,9 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 
 	for _, url := range urls {
 		id := u.ShortId(url)
-		err := store.AddURL(url, id)
-		if err != nil {
-			t.Errorf("AddURL() failed")
-		}
-		urlReturned, err := store.GetURL(id)
-		if err != nil {
-			t.Errorf("want [%s] but failed to get one", url)
-		} else if urlReturned != url {
+		_ = store.AddURL(url, id)          // MapStorage never returns non-nil error
+		urlReturned, _ := store.GetURL(id) // MapStorage never returns non-nil error
+		if urlReturned != url {
 			t.Errorf("got [%s], want [%s]", urlReturned, url)
 		}
 	}
@@ -34,8 +29,8 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 func TestMemoryStore_Get_Nonexistent(t *testing.T) {
 	store := storage.NewMapStorage()
 	id := "nonexistent_id"
-	urlReturned, err := store.GetURL(id)
-	if err == nil {
+	urlReturned, _ := store.GetURL(id) // MapStorage never returns non-nil error
+	if urlReturned != "" {
 		t.Errorf("got [%s] which is not supposed to exist in storage", urlReturned)
 	}
 }
