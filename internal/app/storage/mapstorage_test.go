@@ -17,7 +17,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	for _, url := range urls {
-		id := u.ShortId(url)
+		id := u.ShortID(url)
 		_ = store.AddURL(url, id)          // MapStorage never returns non-nil error
 		urlReturned, _ := store.GetURL(id) // MapStorage never returns non-nil error
 		if urlReturned != url {

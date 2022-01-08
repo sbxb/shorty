@@ -53,7 +53,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := u.ShortId(url)
+	id := u.ShortID(url)
 	err = uh.Store.AddURL(url, id)
 	if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)

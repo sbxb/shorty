@@ -67,7 +67,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 
 	// Fill in test cases' ids
 	for i, tt := range tests {
-		tests[i].id = u.ShortId(tt.url)
+		tests[i].id = u.ShortID(tt.url)
 	}
 
 	// Prepare empty store
@@ -151,7 +151,7 @@ func TestGetHandler_ValidCases(t *testing.T) {
 
 	// Fill in test cases' ids
 	for i, tt := range tests {
-		tests[i].id = u.ShortId(tt.url)
+		tests[i].id = u.ShortID(tt.url)
 	}
 
 	// Prepare store

@@ -6,12 +6,12 @@ import (
 	"math/big"
 )
 
-// ShortId converts URL to a string containing its MD5 hash represented
+// ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number
 // MD5 is OK since we do not care about any (almost impossible) collisions
 // NB: Go base62 implementation (using digits 0..9a..zA..Z) may differ from any
 // other implementations (using digits 0..9A..Za..z)
-func ShortId(url string) string {
+func ShortID(url string) string {
 	hash := md5.Sum([]byte(url))
 	strHash := hex.EncodeToString(hash[:])
 

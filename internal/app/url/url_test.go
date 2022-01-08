@@ -6,7 +6,7 @@ import (
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
-func TestShortId(t *testing.T) {
+func TestShortID(t *testing.T) {
 	tests := []struct {
 		original string
 		want     string
@@ -21,7 +21,7 @@ func TestShortId(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		id := url.ShortId(tt.original)
+		id := url.ShortID(tt.original)
 		if id != tt.want {
 			t.Errorf("got [%s], want [%s]", id, tt.want)
 		}
