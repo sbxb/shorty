@@ -29,7 +29,7 @@ func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
 	return &HTTPServer{
 		srv:             server,
 		idleConnsClosed: make(chan struct{}), // channel is closed after shutdown completed
-		shutdownTimeout: 1 * time.Second,
+		shutdownTimeout: 3 * time.Second,
 	}, nil
 }
 
@@ -46,7 +46,7 @@ func (s *HTTPServer) WaitForInterrupt() {
 // here and called before idleConnsClosed channel is closed
 func (s *HTTPServer) Close() {
 	log.Println("Trying to gracefully stop HTTPServer")
-	// Perform server shutdown with a default maximum timeout of 1 second
+	// Perform server shutdown with a default maximum timeout of 3 seconds
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
 
