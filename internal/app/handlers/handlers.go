@@ -22,12 +22,17 @@ type URLHandler struct {
 // в HTTP-заголовке Location ...
 func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if url, err := uh.Store.GetURL(id); err == nil {
-		w.Header().Set("Location", url)
-		w.WriteHeader(http.StatusTemporaryRedirect)
+	url, err := uh.Store.GetURL(id)
+	if err != nil {
+		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
 	}
-	http.NotFound(w, r)
+	if url == "" {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Location", url)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 // PostHandler process POST / request
