@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,104 @@ import (
 )
 
 var cfg = config.DefaultConfig
+
+func TestJSONPostHandler_ValidCases(t *testing.T) {
+	wantCode := 201
+	tests := []struct {
+		url          string
+		requestBody  string
+		wantResponse string
+	}{
+		{
+			url:         "http://example.com",
+			requestBody: `{"url": "http://example.com"}`,
+		},
+		{
+			url:         "http://example.org",
+			requestBody: `{"url": "http://example.org"}`,
+		},
+	}
+
+	// Fill in test cases' ids
+	for i, tt := range tests {
+		tests[i].wantResponse = fmt.Sprintf("{\"result\":\"%s%s\"}", cfg.FullServerURL(), u.ShortID(tt.url))
+	}
+
+	// Prepare empty store
+	store := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
+	for _, tt := range tests {
+		t.Run("Post JSON", func(t *testing.T) {
+			requestURL := cfg.FullServerURL() + "api/shorten"
+			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.requestBody))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != wantCode {
+				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
+			}
+
+			resBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("cannot read response body, should not see this normally")
+			}
+
+			if string(resBody) != tt.wantResponse {
+				t.Errorf("want [%s],  got [%s]", tt.wantResponse, resBody)
+			}
+		})
+	}
+}
+
+func TestJSONPostHandler_NotValidCases(t *testing.T) {
+	wantCode := 400
+	tests := []struct {
+		body string
+	}{
+		{""},
+		{" "},
+		{"abc"},
+		{"{"},
+		{"{}"},
+		{`{"key": "value"}`},
+		{`{"url": "http://example.com", "key": "value"}`}, // extra field
+		{`{"url": ""}`}, // empty url
+	}
+
+	// Prepare empty store
+	store := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.URLHandler{
+		Store:      store,
+		ServerName: cfg.FullServerName(),
+	}
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
+	for _, tt := range tests {
+		t.Run("Post JSON", func(t *testing.T) {
+			requestURL := cfg.FullServerURL() + "api/shorten"
+			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != wantCode {
+				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
+			}
+		})
+	}
+}
 
 func TestPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
