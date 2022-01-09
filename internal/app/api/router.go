@@ -22,5 +22,7 @@ func NewRouter(store storage.Storage, serverName string) http.Handler {
 	router.Get("/{id}", urlHandler.GetHandler)
 	router.Post("/", urlHandler.PostHandler)
 
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
 	return router
 }
