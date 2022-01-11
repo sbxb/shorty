@@ -85,8 +85,8 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := u.ShortID(req.Url)
-	err = uh.Store.AddURL(req.Url, id)
+	id := u.ShortID(req.URL)
+	err = uh.Store.AddURL(req.URL, id)
 	if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
