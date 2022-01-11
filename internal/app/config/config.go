@@ -21,29 +21,29 @@ var defaultConfig = Config{
 	port:  "8080",
 }
 
-// fullServerName returns "hostname:port", e.g. "localhost:8080"
-func (c Config) fullServerName() string {
+// defaultServerName returns "hostname:port", e.g. "localhost:8080"
+func (c Config) defaultServerName() string {
 	return fmt.Sprintf("%s:%s", c.host, c.port)
 }
 
-// fullServerURL returns "scheme://host:port", e.g. "http://localhost:8080"
-func (c Config) fullServerURL() string {
+// defaultServerURL returns "scheme://host:port", e.g. "http://localhost:8080"
+func (c Config) defaultServerURL() string {
 	return fmt.Sprintf("%s://%s:%s", c.proto, c.host, c.port)
 }
 
-// New creates new config merging env varianle with the dafault ones
+// New creates new config merging env variables with the default ones
 func New() *Config {
 	c := defaultConfig
 
 	sa := os.Getenv("SERVER_ADDRESS")
 	if sa == "" {
-		sa = c.fullServerName()
+		sa = c.defaultServerName()
 	}
 	c.ServerAddress = sa
 
 	bu := os.Getenv("BASE_URL")
 	if bu == "" {
-		bu = c.fullServerURL()
+		bu = c.defaultServerURL()
 	}
 	c.BaseURL = bu
 	return &c
