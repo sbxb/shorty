@@ -7,14 +7,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/storage"
 	u "github.com/sbxb/shorty/internal/app/url"
 )
 
 // URLHandler defines a container for handlers and their dependencies
 type URLHandler struct {
-	Store      storage.Storage
-	ServerName string
+	Store  storage.Storage
+	Config *config.Config
 }
 
 // GetHandler process GET /{id} request
@@ -62,7 +63,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "http://%s/%s", uh.ServerName, id)
+	fmt.Fprintf(w, "%s%s", uh.Config.BaseURL, id)
 }
 
 // JSONPostHandler process POST /api/shorten request with JSON payload
@@ -94,7 +95,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	jr, err := json.Marshal(
 		u.URLResponse{
-			Result: fmt.Sprintf("http://%s/%s", uh.ServerName, id),
+			Result: fmt.Sprintf("%s%s", uh.Config.BaseURL, id),
 		},
 	)
 

@@ -19,7 +19,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var cfg = config.DefaultConfig
+var cfg = config.New()
 
 func TestJSONPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
@@ -43,7 +43,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	// Fill in test cases' request and response objects
 	for i, tt := range tests {
 		tests[i].requestObj.URL = tt.url
-		tests[i].wantResponseObj.Result = fmt.Sprintf("%s%s", cfg.FullServerURL(), u.ShortID(tt.url))
+		tests[i].wantResponseObj.Result = fmt.Sprintf("%s%s", cfg.BaseURL, u.ShortID(tt.url))
 	}
 
 	// Prepare empty store
@@ -51,14 +51,14 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Post("/api/shorten", urlHandler.JSONPostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.FullServerURL() + "api/shorten"
+			requestURL := cfg.BaseURL + "api/shorten"
 			requestBody, _ := json.Marshal(tt.requestObj)
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewReader(requestBody))
 			w := httptest.NewRecorder()
@@ -107,14 +107,14 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Post("/api/shorten", urlHandler.JSONPostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.FullServerURL() + "api/shorten"
+			requestURL := cfg.BaseURL + "api/shorten"
 			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -142,14 +142,14 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL, strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -186,14 +186,14 @@ func TestPostHandler_ValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL, strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -208,8 +208,8 @@ func TestPostHandler_ValidCases(t *testing.T) {
 				t.Fatalf("cannot read response body, should not see this normally")
 			}
 
-			if string(resBody) != cfg.FullServerURL()+tt.id {
-				t.Errorf("want returned id [%s],  got [%s]", cfg.FullServerURL()+tt.id, resBody)
+			if string(resBody) != cfg.BaseURL+tt.id {
+				t.Errorf("want returned id [%s],  got [%s]", cfg.BaseURL+tt.id, resBody)
 			}
 		})
 	}
@@ -229,13 +229,13 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.FullServerURL() + tt.id
+		requestURL := cfg.BaseURL + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
@@ -273,13 +273,13 @@ func TestGetHandler_ValidCases(t *testing.T) {
 
 	router := chi.NewRouter()
 	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
+		Store:  store,
+		Config: cfg,
 	}
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.FullServerURL() + tt.id
+		requestURL := cfg.BaseURL + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()

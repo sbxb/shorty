@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-	cfg := config.DefaultConfig
+	cfg := config.New()
 	store := storage.NewMapStorage()
-	router := api.NewRouter(store, cfg.FullServerName())
-	server, _ := api.NewHTTPServer(cfg.FullServerName(), router)
+	router := api.NewRouter(store, cfg)
+	server, _ := api.NewHTTPServer(cfg.ServerAddress, router)
 
 	go server.WaitForInterrupt()
 	os.Exit(server.Run())
