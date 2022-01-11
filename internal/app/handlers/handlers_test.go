@@ -1,10 +1,13 @@
 package handlers_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -21,23 +24,26 @@ var cfg = config.DefaultConfig
 func TestJSONPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
 	tests := []struct {
-		url          string
-		requestBody  string
-		wantResponse string
+		url             string
+		requestObj      u.URLRequest
+		wantResponseObj u.URLResponse
 	}{
 		{
-			url:         "http://example.com",
-			requestBody: `{"url": "http://example.com"}`,
+			url:             "http://example.com",
+			requestObj:      u.URLRequest{},
+			wantResponseObj: u.URLResponse{},
 		},
 		{
-			url:         "http://example.org",
-			requestBody: `{"url": "http://example.org"}`,
+			url:             "http://example.org",
+			requestObj:      u.URLRequest{},
+			wantResponseObj: u.URLResponse{},
 		},
 	}
 
-	// Fill in test cases' ids
+	// Fill in test cases' request and response objects
 	for i, tt := range tests {
-		tests[i].wantResponse = fmt.Sprintf("{\"result\":\"%s%s\"}", cfg.FullServerURL(), u.ShortID(tt.url))
+		tests[i].requestObj.URL = tt.url
+		tests[i].wantResponseObj.Result = fmt.Sprintf("%s%s", cfg.FullServerURL(), u.ShortID(tt.url))
 	}
 
 	// Prepare empty store
@@ -53,7 +59,8 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
 			requestURL := cfg.FullServerURL() + "api/shorten"
-			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.requestBody))
+			requestBody, _ := json.Marshal(tt.requestObj)
+			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewReader(requestBody))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -63,13 +70,18 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
 			}
 
-			resBody, err := io.ReadAll(resp.Body)
+			// resBody, err := io.ReadAll(resp.Body)
+			// if err != nil {
+			// 	t.Fatalf("cannot read response body, should not see this normally")
+			// }
+
+			responseObj := u.URLResponse{}
+			err := json.NewDecoder(resp.Body).Decode(&responseObj)
 			if err != nil {
 				t.Fatalf("cannot read response body, should not see this normally")
 			}
-
-			if string(resBody) != tt.wantResponse {
-				t.Errorf("want [%s],  got [%s]", tt.wantResponse, resBody)
+			if !reflect.DeepEqual(responseObj, tt.wantResponseObj) {
+				t.Errorf("want [%#v],  got [%#v]", tt.wantResponseObj, responseObj)
 			}
 		})
 	}
