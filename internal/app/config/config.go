@@ -26,9 +26,9 @@ func (c Config) fullServerName() string {
 	return fmt.Sprintf("%s:%s", c.host, c.port)
 }
 
-// fullServerURL returns "scheme://host:port/", e.g. "http://localhost:8080/"
+// fullServerURL returns "scheme://host:port", e.g. "http://localhost:8080"
 func (c Config) fullServerURL() string {
-	return fmt.Sprintf("%s://%s:%s/", c.proto, c.host, c.port)
+	return fmt.Sprintf("%s://%s:%s", c.proto, c.host, c.port)
 }
 
 // New creates new config merging env varianle with the dafault ones

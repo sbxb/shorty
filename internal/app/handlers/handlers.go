@@ -63,7 +63,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "%s%s", uh.Config.BaseURL, id)
+	fmt.Fprintf(w, "%s/%s", uh.Config.BaseURL, id)
 }
 
 // JSONPostHandler process POST /api/shorten request with JSON payload
@@ -95,7 +95,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	jr, err := json.Marshal(
 		u.URLResponse{
-			Result: fmt.Sprintf("%s%s", uh.Config.BaseURL, id),
+			Result: fmt.Sprintf("%s/%s", uh.Config.BaseURL, id),
 		},
 	)
 

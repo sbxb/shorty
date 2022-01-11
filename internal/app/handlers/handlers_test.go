@@ -43,7 +43,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	// Fill in test cases' request and response objects
 	for i, tt := range tests {
 		tests[i].requestObj.URL = tt.url
-		tests[i].wantResponseObj.Result = fmt.Sprintf("%s%s", cfg.BaseURL, u.ShortID(tt.url))
+		tests[i].wantResponseObj.Result = fmt.Sprintf("%s/%s", cfg.BaseURL, u.ShortID(tt.url))
 	}
 
 	// Prepare empty store
@@ -58,7 +58,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.BaseURL + "api/shorten"
+			requestURL := cfg.BaseURL + "/api/shorten"
 			requestBody, _ := json.Marshal(tt.requestObj)
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewReader(requestBody))
 			w := httptest.NewRecorder()
@@ -114,7 +114,7 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.BaseURL + "api/shorten"
+			requestURL := cfg.BaseURL + "/api/shorten"
 			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
@@ -149,7 +149,7 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL, strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -193,7 +193,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL, strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 			resp := w.Result()
@@ -207,9 +207,9 @@ func TestPostHandler_ValidCases(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot read response body, should not see this normally")
 			}
-
-			if string(resBody) != cfg.BaseURL+tt.id {
-				t.Errorf("want returned id [%s],  got [%s]", cfg.BaseURL+tt.id, resBody)
+			want := cfg.BaseURL + "/" + tt.id
+			if string(resBody) != want {
+				t.Errorf("want returned id [%s],  got [%s]", want, resBody)
 			}
 		})
 	}
@@ -235,7 +235,7 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.BaseURL + tt.id
+		requestURL := cfg.BaseURL + "/" + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
@@ -279,7 +279,7 @@ func TestGetHandler_ValidCases(t *testing.T) {
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.BaseURL + tt.id
+		requestURL := cfg.BaseURL + "/" + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
