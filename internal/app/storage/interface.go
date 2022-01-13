@@ -4,4 +4,5 @@ package storage
 type Storage interface {
 	AddURL(url string, id string) error
 	GetURL(id string) (string, error)
+	Close()
 }

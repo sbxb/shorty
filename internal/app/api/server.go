@@ -13,10 +13,11 @@ type HTTPServer struct {
 	srv             *http.Server
 	idleConnsClosed chan struct{}
 	shutdownTimeout time.Duration
+	closer          func()
 }
 
 // NewHTTPServer creates a new server
-func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
+func NewHTTPServer(address string, router http.Handler, closer func()) (*HTTPServer, error) {
 	// Set more reasonable timeouts than the default ones
 	server := &http.Server{
 		Addr:         address,
@@ -30,6 +31,7 @@ func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
 		srv:             server,
 		idleConnsClosed: make(chan struct{}), // channel is closed after shutdown completed
 		shutdownTimeout: 3 * time.Second,
+		closer:          closer,
 	}, nil
 }
 
@@ -49,7 +51,7 @@ func (s *HTTPServer) Close() {
 	// Perform server shutdown with a default maximum timeout of 3 seconds
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
-
+	s.closer()
 	if err := s.srv.Shutdown(timeoutCtx); err != nil {
 		// Error from closing listeners, or context timeout:
 		log.Printf("HTTPServer Shutdown(): %v", err)

@@ -7,11 +7,12 @@ import (
 
 // Config contains application settings
 type Config struct {
-	proto         string // should be Scheme according to RFC 3986, but not on my watch
-	host          string
-	port          string
-	ServerAddress string
-	BaseURL       string
+	proto           string // should be Scheme according to RFC 3986, but not on my watch
+	host            string
+	port            string
+	ServerAddress   string
+	BaseURL         string
+	FileStoragePath string
 }
 
 // One default config to rule them all (hardcoded for now)
@@ -46,5 +47,7 @@ func New() *Config {
 		bu = c.defaultServerURL()
 	}
 	c.BaseURL = bu
+
+	c.FileStoragePath = os.Getenv("FILE_STORAGE_PATH")
 	return &c
 }
