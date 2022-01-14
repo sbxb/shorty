@@ -19,6 +19,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// stackoverflow.com-recommended hack to parse testing flags before application ones
+// prevents test failure with "flag provided but not defined: -test.testlogfile" error
+var _ = func() bool {
+	testing.Init()
+	return true
+}()
+
 var cfg = config.New()
 
 func TestJSONPostHandler_ValidCases(t *testing.T) {
