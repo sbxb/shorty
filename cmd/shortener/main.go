@@ -11,10 +11,15 @@ import (
 
 func main() {
 	cfg := config.New()
+	if err := cfg.Validate(); err != nil {
+		log.Fatalln(err)
+	}
+
 	store := storage.NewMapStorage()
 	if err := store.BindFile(cfg.FileStoragePath); err != nil {
 		log.Fatalln(err)
 	}
+
 	router := api.NewRouter(store, cfg)
 	server, _ := api.NewHTTPServer(cfg.ServerAddress, router, store.Close)
 

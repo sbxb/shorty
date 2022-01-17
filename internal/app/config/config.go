@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"strings"
 )
 
 const (
@@ -23,7 +24,8 @@ var defaultConfig = Config{
 }
 
 // New creates config merging default settings with flags, then with env variables
-// The last nonempty value takes precedence (default < flag < env)
+// The last nonempty value takes precedence (default < flag < env) except for
+// FILE_STORAGE_PATH env variable which overrides -f flag even if empty
 func New() *Config {
 	c := defaultConfig
 	c.parseFlags()
@@ -51,8 +53,28 @@ func (c *Config) parseEnvVars() {
 		c.BaseURL = bu
 	}
 
-	fsp := os.Getenv("FILE_STORAGE_PATH")
-	if fsp != "" {
+	fsp, ok := os.LookupEnv("FILE_STORAGE_PATH")
+	if ok {
+		// empty string is valid here, overrides -f flag and returns the default ""
 		c.FileStoragePath = fsp
 	}
+}
+
+func (c *Config) Validate() error {
+	// Remove leading and trailing spaces without complaining
+	// Other mistakes and typos are to be considered as errors
+	c.ServerAddress = strings.TrimSpace(c.ServerAddress)
+	c.BaseURL = strings.TrimSpace(c.BaseURL)
+	c.FileStoragePath = strings.TrimSpace(c.FileStoragePath)
+
+	if err := ValidateServerAddress(c.ServerAddress); err != nil {
+		return err
+	}
+
+	if err := ValidateBaseURL(c.BaseURL); err != nil {
+		return err
+	}
+
+	// No need to validate c.FileStoragePath, storage itself will do the job
+	return nil
 }

@@ -6,11 +6,9 @@ import (
 	nu "net/url"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 func ValidateBaseURL(url string) error {
-	url = strings.TrimSpace(url)
 	if url == "" {
 		return errors.New("empty URL")
 	}
