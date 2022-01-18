@@ -97,10 +97,7 @@ func isHostnameSomewhatValid(hostname string) bool {
 // isHostValidIP returns true for string representations of valid IPv4 and IPv6 addresses
 // totally relies upon net.ParseIP()
 func isHostValidIP(host string) bool {
-	if net.ParseIP(host) == nil {
-		return false
-	}
-	return true
+	return net.ParseIP(host) != nil
 }
 
 // isPortNumberValid returns true for string representations of ports 1..65535, false otherwise
