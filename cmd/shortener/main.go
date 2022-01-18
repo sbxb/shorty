@@ -16,7 +16,7 @@ func main() {
 	}
 
 	store := storage.NewMapStorage()
-	if err := store.BindFile(cfg.FileStoragePath); err != nil {
+	if err := store.Open(cfg.FileStoragePath); err != nil {
 		log.Fatalln(err)
 	}
 

@@ -42,7 +42,7 @@ func TestMemoryStore_Save_To_File_And_Read_Again(t *testing.T) {
 	tmpFileName := tmpDirName + "/" + getRandomFileName(t)
 
 	store := storage.NewMapStorage()
-	if err := store.BindFile(tmpFileName); err != nil {
+	if err := store.Open(tmpFileName); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,7 +59,7 @@ func TestMemoryStore_Save_To_File_And_Read_Again(t *testing.T) {
 	store.Close()
 
 	store = storage.NewMapStorage()
-	if err := store.BindFile(tmpFileName); err != nil {
+	if err := store.Open(tmpFileName); err != nil {
 		t.Fatal(err)
 	}
 

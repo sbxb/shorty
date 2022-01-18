@@ -26,10 +26,9 @@ func NewMapStorage() *MapStorage {
 	return &MapStorage{data: d}
 }
 
-// FIXME Make it part of storage interface, let's call it Open() instead !!!
-// BindFile creates a file if missing, opens the file for reading and writing,
+// Open creates a file if missing, opens the file for reading and writing,
 // and puts the file object into .file field
-func (st *MapStorage) BindFile(filename string) error {
+func (st *MapStorage) Open(filename string) error {
 	if filename == "" {
 		return nil
 	}
@@ -42,6 +41,7 @@ func (st *MapStorage) BindFile(filename string) error {
 	return nil
 }
 
+// tryLoadRecords tries to load the content of the opened file ignoring any errors
 func (st *MapStorage) tryLoadRecords() {
 	scanner := bufio.NewScanner(st.file)
 	for scanner.Scan() {
