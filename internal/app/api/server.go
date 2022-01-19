@@ -34,6 +34,9 @@ func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
 // Close gracefully stops the server. Any additional on-close actions should be added
 // here and called before idleConnsClosed channel is closed
 func (s *HTTPServer) Close() {
+	if s.srv == nil {
+		return
+	}
 	log.Println("Trying to gracefully stop HTTPServer")
 	// Perform server shutdown with a default maximum timeout of 3 seconds
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
@@ -44,12 +47,16 @@ func (s *HTTPServer) Close() {
 		log.Printf("HTTPServer Shutdown() failed: %v", err)
 	}
 
+	s.srv = nil
 	close(s.idleConnsClosed)
 }
 
 // Start runs the server and creates a monitoring gorouting to wait for
 // the context to be marked done
 func (s *HTTPServer) Start(ctx context.Context) {
+	if s.srv == nil {
+		return
+	}
 	go func() {
 		<-ctx.Done()
 		s.Close()
