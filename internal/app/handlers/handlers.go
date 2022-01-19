@@ -14,8 +14,15 @@ import (
 
 // URLHandler defines a container for handlers and their dependencies
 type URLHandler struct {
-	Store  storage.Storage
-	Config *config.Config
+	store  storage.Storage
+	config *config.Config
+}
+
+func NewURLHandler(st storage.Storage, cfg *config.Config) URLHandler {
+	return URLHandler{
+		store:  st,
+		config: cfg,
+	}
 }
 
 // GetHandler process GET /{id} request
@@ -24,7 +31,7 @@ type URLHandler struct {
 // в HTTP-заголовке Location ...
 func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	url, err := uh.Store.GetURL(id)
+	url, err := uh.store.GetURL(id)
 	if err != nil {
 		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
@@ -56,14 +63,14 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := u.ShortID(url)
-	err = uh.Store.AddURL(url, id)
+	err = uh.store.AddURL(url, id)
 	if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "%s/%s", uh.Config.BaseURL, id)
+	fmt.Fprintf(w, "%s/%s", uh.config.BaseURL, id)
 }
 
 // JSONPostHandler process POST /api/shorten request with JSON payload
@@ -87,7 +94,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := u.ShortID(req.URL)
-	err = uh.Store.AddURL(req.URL, id)
+	err = uh.store.AddURL(req.URL, id)
 	if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
@@ -95,7 +102,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	jr, err := json.Marshal(
 		u.URLResponse{
-			Result: fmt.Sprintf("%s/%s", uh.Config.BaseURL, id),
+			Result: fmt.Sprintf("%s/%s", uh.config.BaseURL, id),
 		},
 	)
 

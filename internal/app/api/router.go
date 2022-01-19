@@ -15,10 +15,7 @@ import (
 func NewRouter(store storage.Storage, cfg *config.Config) http.Handler {
 	router := chi.NewRouter()
 
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 
 	router.Get("/{id}", urlHandler.GetHandler)
 	router.Post("/", urlHandler.PostHandler)

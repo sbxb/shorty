@@ -57,10 +57,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/api/shorten", urlHandler.JSONPostHandler)
 
 	for _, tt := range tests {
@@ -113,10 +110,7 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/api/shorten", urlHandler.JSONPostHandler)
 
 	for _, tt := range tests {
@@ -148,10 +142,7 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
@@ -192,10 +183,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
@@ -235,10 +223,7 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
@@ -279,10 +264,7 @@ func TestGetHandler_ValidCases(t *testing.T) {
 	}
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:  store,
-		Config: cfg,
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
