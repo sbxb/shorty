@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 )
@@ -56,18 +55,18 @@ func (st *MapStorage) tryLoadRecords() {
 	}
 }
 
-func (st *MapStorage) dumpData() {
-	keys := make([]string, len(st.data))
-	for k := range st.data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	fmt.Println("*****")
-	for _, k := range keys {
-		fmt.Println(k, st.data[k])
-	}
-	fmt.Println("*****")
-}
+// func (st *MapStorage) dumpData() {
+// 	keys := make([]string, len(st.data))
+// 	for k := range st.data {
+// 		keys = append(keys, k)
+// 	}
+// 	sort.Strings(keys)
+// 	fmt.Println("*****")
+// 	for _, k := range keys {
+// 		fmt.Println(k, st.data[k])
+// 	}
+// 	fmt.Println("*****")
+// }
 
 // AddURL saves both url and its id
 // MapStorage implementation never returns non-nil error

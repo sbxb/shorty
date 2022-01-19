@@ -16,7 +16,7 @@ func ValidateBaseURL(url string) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("%#v\n", *urlObj)
+
 	if urlObj.Scheme == "" || urlObj.Host == "" {
 		return errors.New("invalid URL, wrong scheme or host or both")
 	}
@@ -46,8 +46,6 @@ func ValidateServerAddress(address string) error {
 	if !isPortNumberValid(port) {
 		return errors.New("invalid port")
 	}
-
-	// port is OK, checking host
 
 	// empty host is OK for http.ListenAndServe
 	if host == "" {
