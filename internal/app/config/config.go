@@ -23,7 +23,7 @@ var defaultConfig = Config{
 	BaseURL:       defaultBaseURL,
 }
 
-// New creates config merging default settings with flags, then with env variables
+// New creates config by merging default settings with flags, then with env variables
 // The last nonempty value takes precedence (default < flag < env) except for
 // FILE_STORAGE_PATH env variable which overrides -f flag even if empty
 func New() *Config {

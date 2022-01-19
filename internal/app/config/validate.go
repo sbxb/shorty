@@ -54,9 +54,7 @@ func ValidateServerAddress(address string) error {
 		return nil
 	}
 
-	if isHostValidIP(host) {
-		return nil
-	} else if isHostnameSomewhatValid(host) {
+	if isHostValidIP(host) || isHostnameSomewhatValid(host) {
 		return nil
 	}
 
