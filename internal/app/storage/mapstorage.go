@@ -31,12 +31,14 @@ func (st *MapStorage) Open(filename string) error {
 	if filename == "" {
 		return nil
 	}
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0660)
+
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0660)
 	if err != nil {
 		return err
 	}
 	st.file = f
 	st.tryLoadRecords()
+
 	return nil
 }
 
@@ -55,19 +57,6 @@ func (st *MapStorage) tryLoadRecords() {
 	}
 }
 
-// func (st *MapStorage) dumpData() {
-// 	keys := make([]string, len(st.data))
-// 	for k := range st.data {
-// 		keys = append(keys, k)
-// 	}
-// 	sort.Strings(keys)
-// 	fmt.Println("*****")
-// 	for _, k := range keys {
-// 		fmt.Println(k, st.data[k])
-// 	}
-// 	fmt.Println("*****")
-// }
-
 // AddURL saves both url and its id
 // MapStorage implementation never returns non-nil error
 func (st *MapStorage) AddURL(url string, id string) error {
@@ -75,12 +64,6 @@ func (st *MapStorage) AddURL(url string, id string) error {
 	defer st.mu.Unlock()
 
 	st.data[id] = url
-
-	if st.file != nil {
-		if _, err := st.file.WriteString(fmt.Sprintf("%s\t%s\n", id, url)); err != nil {
-			log.Println("MapStorage failed to write to a file", err)
-		}
-	}
 
 	return nil
 }
@@ -98,12 +81,23 @@ func (st *MapStorage) GetURL(id string) (string, error) {
 }
 
 func (st *MapStorage) Close() {
-	log.Println("MapStorage closer activated")
 	if st.file == nil {
 		return
 	}
+	log.Println("MapStorage trying to save records")
+	st.trySaveRecords()
 	log.Println("MapStorage closing", st.file.Name())
 	if err := st.file.Close(); err != nil {
 		log.Println(err)
 	}
+}
+
+func (st *MapStorage) trySaveRecords() {
+	st.file.Truncate(0)
+	st.file.Seek(0, 0)
+	w := bufio.NewWriter(st.file)
+	for id, url := range st.data {
+		_, _ = w.WriteString(fmt.Sprintf("%s\t%s\n", id, url))
+	}
+	w.Flush()
 }
