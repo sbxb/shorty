@@ -3,16 +3,16 @@ package config
 import (
 	"errors"
 	"net"
-	nu "net/url"
+	"net/url"
 	"regexp"
 	"strconv"
 )
 
-func ValidateBaseURL(url string) error {
-	if url == "" {
+func ValidateBaseURL(u string) error {
+	if u == "" {
 		return errors.New("empty URL")
 	}
-	urlObj, err := nu.Parse(url)
+	urlObj, err := url.Parse(u)
 	if err != nil {
 		return err
 	}
