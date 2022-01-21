@@ -53,7 +53,7 @@ func (st *MapStorage) tryLoadRecords() {
 		st.AddURL(input[1], input[0])
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+		log.Printf("reading standard input: %v", err)
 	}
 }
 
@@ -90,6 +90,7 @@ func (st *MapStorage) Close() {
 	if err := st.file.Close(); err != nil {
 		log.Println(err)
 	}
+	st.file = nil
 }
 
 func (st *MapStorage) trySaveRecords() {
@@ -97,7 +98,7 @@ func (st *MapStorage) trySaveRecords() {
 	st.file.Seek(0, 0)
 	w := bufio.NewWriter(st.file)
 	for id, url := range st.data {
-		_, _ = w.WriteString(fmt.Sprintf("%s\t%s\n", id, url))
+		w.WriteString(fmt.Sprintf("%s\t%s\n", id, url))
 	}
 	w.Flush()
 }
