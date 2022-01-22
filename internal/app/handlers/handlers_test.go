@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -17,6 +16,8 @@ import (
 	u "github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // stackoverflow.com-recommended hack to parse testing flags before application ones
@@ -53,7 +54,6 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 		tests[i].wantResponseObj.Result = fmt.Sprintf("%s/%s", cfg.BaseURL, u.ShortID(tt.url))
 	}
 
-	// Prepare empty store
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
@@ -62,31 +62,22 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.BaseURL + "/api/shorten"
 			requestBody, _ := json.Marshal(tt.requestObj)
-			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewReader(requestBody))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
-
-			// resBody, err := io.ReadAll(resp.Body)
-			// if err != nil {
-			// 	t.Fatalf("cannot read response body, should not see this normally")
-			// }
+			assert.Equal(t, resp.StatusCode, wantCode)
 
 			responseObj := u.URLResponse{}
+
 			err := json.NewDecoder(resp.Body).Decode(&responseObj)
-			if err != nil {
-				t.Fatalf("cannot read response body, should not see this normally")
-			}
-			if !reflect.DeepEqual(responseObj, tt.wantResponseObj) {
-				t.Errorf("want [%#v],  got [%#v]", tt.wantResponseObj, responseObj)
-			}
+			require.NoError(t, err, "cannot read response body, should not see this normally")
+
+			assert.Equal(t, responseObj, tt.wantResponseObj)
 		})
 	}
 }
@@ -106,7 +97,6 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 		{`{"url": ""}`}, // empty url
 	}
 
-	// Prepare empty store
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
@@ -115,16 +105,14 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("Post JSON", func(t *testing.T) {
-			requestURL := cfg.BaseURL + "/api/shorten"
-			req := httptest.NewRequest(http.MethodPost, requestURL, strings.NewReader(tt.body))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", strings.NewReader(tt.body))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 		})
 	}
 }
@@ -138,7 +126,6 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 		{url: ""},
 	}
 
-	// Prepare empty store
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
@@ -150,12 +137,11 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 		})
 	}
 }
@@ -179,7 +165,6 @@ func TestPostHandler_ValidCases(t *testing.T) {
 		tests[i].id = u.ShortID(tt.url)
 	}
 
-	// Prepare empty store
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
@@ -191,21 +176,17 @@ func TestPostHandler_ValidCases(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 
 			resBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("cannot read response body, should not see this normally")
-			}
+			require.NoError(t, err, "cannot read response body, should not see this normally")
+
 			want := cfg.BaseURL + "/" + tt.id
-			if string(resBody) != want {
-				t.Errorf("want returned id [%s],  got [%s]", want, resBody)
-			}
+			assert.Equal(t, string(resBody), want)
 		})
 	}
 }
@@ -219,7 +200,7 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 		{id: ""},
 		{id: "NON_EXISTING_ID"},
 	}
-	// Prepare empty store
+
 	store := storage.NewMapStorage()
 
 	router := chi.NewRouter()
@@ -232,12 +213,11 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 		})
 	}
 }
@@ -257,7 +237,6 @@ func TestGetHandler_ValidCases(t *testing.T) {
 		tests[i].id = u.ShortID(tt.url)
 	}
 
-	// Prepare store
 	store := storage.NewMapStorage()
 	for _, tt := range tests {
 		store.AddURL(tt.url, tt.id)
@@ -273,20 +252,15 @@ func TestGetHandler_ValidCases(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d] but got [%d]",
-					http.StatusTemporaryRedirect, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 
 			location := resp.Header.Get("Location")
 
-			if location != tt.url {
-				t.Errorf("want retirned location header [%s] but got [%s]", location, tt.url)
-			}
+			assert.Equal(t, location, tt.url, "location header")
 		})
 	}
-
 }

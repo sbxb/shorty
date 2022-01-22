@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/sbxb/shorty/internal/app/url"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestShortID(t *testing.T) {
@@ -20,11 +22,10 @@ func TestShortID(t *testing.T) {
 			want:     "a1lqzNaaPw3Kxzpk",
 		},
 	}
+
 	for _, tt := range tests {
 		id := url.ShortID(tt.original)
-		if id != tt.want {
-			t.Errorf("got [%s], want [%s]", id, tt.want)
-		}
-	}
 
+		assert.Equal(t, id, tt.want)
+	}
 }

@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestValidateBaseURL_Valid(t *testing.T) {
 	tests := []string{
@@ -14,10 +18,8 @@ func TestValidateBaseURL_Valid(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := ValidateBaseURL(tt)
-		if got != nil {
-			t.Errorf("[%s] should be OK, but got an error %v", tt, got)
-		}
+		err := ValidateBaseURL(tt)
+		assert.Nil(t, err)
 	}
 }
 
@@ -37,10 +39,8 @@ func TestValidateBaseURL_NotValid(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := ValidateBaseURL(tt)
-		if got == nil {
-			t.Errorf("[%s] should have returned an error, but got nil", tt)
-		}
+		err := ValidateBaseURL(tt)
+		assert.NotNil(t, err)
 	}
 }
 
@@ -55,10 +55,8 @@ func TestValidateServerAddress_Valid(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := ValidateServerAddress(tt)
-		if got != nil {
-			t.Errorf("[%s] should be OK, but got an error %v", tt, got)
-		}
+		err := ValidateServerAddress(tt)
+		assert.Nil(t, err)
 	}
 
 }
@@ -76,9 +74,7 @@ func TestValidateServerAddress_NotValid(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := ValidateServerAddress(tt)
-		if got == nil {
-			t.Errorf("[%s] should have returned an error, but got nil", tt)
-		}
+		err := ValidateServerAddress(tt)
+		assert.NotNil(t, err)
 	}
 }
