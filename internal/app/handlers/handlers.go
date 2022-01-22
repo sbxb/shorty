@@ -15,10 +15,10 @@ import (
 // URLHandler defines a container for handlers and their dependencies
 type URLHandler struct {
 	store  storage.Storage
-	config *config.Config
+	config config.Config
 }
 
-func NewURLHandler(st storage.Storage, cfg *config.Config) URLHandler {
+func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 	return URLHandler{
 		store:  st,
 		config: cfg,

@@ -12,7 +12,7 @@ import (
 
 // NewRouter creates chi router and handlers container, register handlers and
 // pass dependencies to handlers
-func NewRouter(store storage.Storage, cfg *config.Config) http.Handler {
+func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 	router := chi.NewRouter()
 
 	urlHandler := handlers.NewURLHandler(store, cfg)

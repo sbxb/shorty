@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,14 +21,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// stackoverflow.com-recommended hack to parse testing flags before application ones
-// prevents test failure with "flag provided but not defined: -test.testlogfile" error
+var cfg config.Config
+
 var _ = func() bool {
+	// stackoverflow.com-recommended hack to parse testing flags before
+	// application ones prevents test failure with an error:
+	// "flag provided but not defined: -test.testlogfile"
 	testing.Init()
+
+	var err error
+	if cfg, err = config.New(); err != nil {
+		log.Fatal(err)
+	}
 	return true
 }()
-
-var cfg = config.New()
 
 func TestJSONPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201

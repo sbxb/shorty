@@ -15,8 +15,8 @@ import (
 func main() {
 	var wg sync.WaitGroup
 
-	cfg := config.New()
-	if err := cfg.Validate(); err != nil {
+	cfg, err := config.New()
+	if err != nil {
 		log.Fatalln(err)
 	}
 

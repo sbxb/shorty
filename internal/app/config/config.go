@@ -26,12 +26,13 @@ var defaultConfig = Config{
 // New creates config by merging default settings with flags, then with env variables
 // The last nonempty value takes precedence (default < flag < env) except for
 // FILE_STORAGE_PATH env variable which overrides -f flag even if empty
-func New() *Config {
+// New also handles validation and returns non-nil error if validation failed
+func New() (Config, error) {
 	c := defaultConfig
 	c.parseFlags()
 	c.parseEnvVars()
-
-	return &c
+	err := c.Validate()
+	return c, err
 }
 
 func (c *Config) parseFlags() {
