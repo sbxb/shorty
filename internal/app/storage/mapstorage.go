@@ -12,9 +12,10 @@ import (
 // MapStorage defines a simple in-memory storage implemented as a wrapper
 // aroung Go map
 type MapStorage struct {
+	sync.RWMutex
+
 	data map[string]string
 	file *os.File
-	mu   sync.RWMutex
 }
 
 // MapStorage implements Storage interface
@@ -60,8 +61,8 @@ func (st *MapStorage) tryLoadRecords() {
 // AddURL saves both url and its id
 // MapStorage implementation never returns non-nil error
 func (st *MapStorage) AddURL(url string, id string) error {
-	st.mu.Lock()
-	defer st.mu.Unlock()
+	st.Lock()
+	defer st.Unlock()
 
 	st.data[id] = url
 
@@ -73,8 +74,8 @@ func (st *MapStorage) AddURL(url string, id string) error {
 // never an empty string)
 // MapStorage implementation never returns non-nil error
 func (st *MapStorage) GetURL(id string) (string, error) {
-	st.mu.RLock()
-	defer st.mu.RUnlock()
+	st.RLock()
+	defer st.RUnlock()
 	url := st.data[id]
 
 	return url, nil
