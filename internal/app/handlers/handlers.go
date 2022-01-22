@@ -77,25 +77,30 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 // ... эндпоинт POST /api/shorten, принимающий в теле запроса JSON-объект
 // {"url": "<some_url>"} и возвращающий в ответ объект {"result": "<shorten_url>"}
 func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
+	const ContentType = "application/json"
 	var req u.URLRequest
+
+	if r.Header.Get("Content-Type") != ContentType {
+		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
+		return
+	}
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
-	err := dec.Decode(&req)
-	if err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// is request an empty struct
 	if req == (u.URLRequest{}) {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Bad request: empty object received", http.StatusBadRequest)
 		return
 	}
 
 	id := u.ShortID(req.URL)
-	err = uh.store.AddURL(req.URL, id)
-	if err != nil {
+	if err := uh.store.AddURL(req.URL, id); err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
 	}
@@ -111,7 +116,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", ContentType)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jr)
 }

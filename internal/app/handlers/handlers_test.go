@@ -71,6 +71,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 		t.Run("Post JSON", func(t *testing.T) {
 			requestBody, _ := json.Marshal(tt.requestObj)
 			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
+			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
