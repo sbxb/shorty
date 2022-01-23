@@ -61,7 +61,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 		tests[i].wantResponseObj.Result = fmt.Sprintf("%s/%s", cfg.BaseURL, u.ShortID(tt.url))
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -105,7 +105,7 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 		{`{"url": ""}`}, // empty url
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -134,7 +134,7 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 		{url: ""},
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -173,7 +173,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 		tests[i].id = u.ShortID(tt.url)
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -209,7 +209,7 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 		{id: "NON_EXISTING_ID"},
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -245,7 +245,7 @@ func TestGetHandler_ValidCases(t *testing.T) {
 		tests[i].id = u.ShortID(tt.url)
 	}
 
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 	for _, tt := range tests {
 		store.AddURL(tt.url, tt.id)
 	}

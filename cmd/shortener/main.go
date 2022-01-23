@@ -20,8 +20,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	store := storage.NewMapStorage()
-	if err := store.Open(cfg.FileStoragePath); err != nil {
+	store, err := storage.NewFileMapStorage(cfg.FileStoragePath)
+	if err != nil {
 		log.Fatalln(err)
 	}
 	defer store.Close()
@@ -45,4 +45,7 @@ func main() {
 	}()
 
 	wg.Wait()
+	if err := store.Close(); err != nil {
+		log.Fatalln(err)
+	}
 }
