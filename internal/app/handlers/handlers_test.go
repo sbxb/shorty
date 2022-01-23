@@ -3,7 +3,6 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -39,26 +38,20 @@ var _ = func() bool {
 func TestJSONPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
 	tests := []struct {
-		url             string
-		requestObj      u.URLRequest
-		wantResponseObj u.URLResponse
+		url              string
+		wantResult       string
+		buildInputOutput func(string, string) (u.URLRequest, u.URLResponse)
 	}{
 		{
-			url:             "http://example.com",
-			requestObj:      u.URLRequest{},
-			wantResponseObj: u.URLResponse{},
+			url:              "http://example.com",
+			wantResult:       cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
+			buildInputOutput: getRequestResponse,
 		},
 		{
-			url:             "http://example.org",
-			requestObj:      u.URLRequest{},
-			wantResponseObj: u.URLResponse{},
+			url:              "http://example.org",
+			wantResult:       cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
+			buildInputOutput: getRequestResponse,
 		},
-	}
-
-	// Fill in test cases' request and response objects
-	for i, tt := range tests {
-		tests[i].requestObj.URL = tt.url
-		tests[i].wantResponseObj.Result = fmt.Sprintf("%s/%s", cfg.BaseURL, u.ShortID(tt.url))
 	}
 
 	store, _ := storage.NewMapStorage()
@@ -68,8 +61,9 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	router.Post("/api/shorten", urlHandler.JSONPostHandler)
 
 	for _, tt := range tests {
-		t.Run("Post JSON", func(t *testing.T) {
-			requestBody, _ := json.Marshal(tt.requestObj)
+		t.Run("Post JSON "+tt.url, func(t *testing.T) {
+			requestObj, wantResponseObj := tt.buildInputOutput(tt.url, tt.wantResult)
+			requestBody, _ := json.Marshal(requestObj)
 			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -85,7 +79,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 			err := json.NewDecoder(resp.Body).Decode(&responseObj)
 			require.NoError(t, err, "cannot read response body, should not see this normally")
 
-			assert.Equal(t, responseObj, tt.wantResponseObj)
+			assert.Equal(t, responseObj, wantResponseObj)
 		})
 	}
 }
@@ -129,7 +123,6 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
 	tests := []struct {
 		url string
-		id  string
 	}{
 		{url: ""},
 	}
@@ -157,20 +150,17 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 func TestPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
 	tests := []struct {
-		url string
-		id  string
+		url  string
+		want string
 	}{
 		{
-			url: "http://example.com",
+			url:  "http://example.com",
+			want: cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
 		},
 		{
-			url: "http://example.org",
+			url:  "http://example.org",
+			want: cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
 		},
-	}
-
-	// Fill in test cases' ids
-	for i, tt := range tests {
-		tests[i].id = u.ShortID(tt.url)
 	}
 
 	store, _ := storage.NewMapStorage()
@@ -193,8 +183,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 			resBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err, "cannot read response body, should not see this normally")
 
-			want := cfg.BaseURL + "/" + tt.id
-			assert.Equal(t, string(resBody), want)
+			assert.Equal(t, string(resBody), tt.want)
 		})
 	}
 }
@@ -233,31 +222,29 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 func TestGetHandler_ValidCases(t *testing.T) {
 	wantCode := 307
 	tests := []struct {
-		url string
-		id  string
+		reqURL  string
+		wantURL string
 	}{
-		{url: "http://example.com"},
-		{url: "http://example.org"},
-	}
-
-	// Fill in test cases' ids
-	for i, tt := range tests {
-		tests[i].id = u.ShortID(tt.url)
+		{
+			reqURL:  cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
+			wantURL: "http://example.com",
+		},
+		{
+			reqURL:  cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
+			wantURL: "http://example.org",
+		},
 	}
 
 	store, _ := storage.NewMapStorage()
-	for _, tt := range tests {
-		store.AddURL(tt.url, tt.id)
-	}
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.BaseURL + "/" + tt.id
-		t.Run("Get: "+requestURL, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+		store.AddURL(tt.wantURL, tt.reqURL[strings.LastIndex(tt.reqURL, "/")+1:])
+		t.Run("Get: "+tt.reqURL, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.reqURL, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -268,7 +255,16 @@ func TestGetHandler_ValidCases(t *testing.T) {
 
 			location := resp.Header.Get("Location")
 
-			assert.Equal(t, location, tt.url, "location header")
+			assert.Equal(t, location, tt.wantURL, "location header")
 		})
 	}
+}
+
+func getRequestResponse(url string, result string) (u.URLRequest, u.URLResponse) {
+	return u.URLRequest{
+			URL: url,
+		},
+		u.URLResponse{
+			Result: result,
+		}
 }
