@@ -27,7 +27,11 @@ func main() {
 	defer store.Close()
 
 	router := api.NewRouter(store, cfg)
-	server, _ := api.NewHTTPServer(cfg.ServerAddress, router)
+	server, err := api.NewHTTPServer(cfg.ServerAddress, router)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer server.Close()
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(), syscall.SIGTERM, syscall.SIGINT,
