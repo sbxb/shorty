@@ -63,6 +63,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO There should be some kind of URL validation
 	log.Printf("POST [%s]\n", url)
 	log.Printf("%#v\n", r.Header.Values("Accept-Encoding"))
+	log.Printf("%#v\n", r.Header.Values("Content-Encoding"))
 	if url == "" {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
