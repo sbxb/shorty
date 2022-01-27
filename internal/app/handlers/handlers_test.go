@@ -1,7 +1,10 @@
 package handlers_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,40 +16,133 @@ import (
 	u "github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var cfg = config.DefaultConfig
+var cfg config.Config
+
+var _ = func() bool {
+	// stackoverflow.com-recommended hack to parse testing flags before
+	// application ones prevents test failure with an error:
+	// "flag provided but not defined: -test.testlogfile"
+	testing.Init()
+
+	var err error
+	if cfg, err = config.New(); err != nil {
+		log.Fatal(err)
+	}
+	return true
+}()
+
+func TestJSONPostHandler_ValidCases(t *testing.T) {
+	wantCode := 201
+	tests := []struct {
+		url              string
+		wantResult       string
+		buildInputOutput func(string, string) (u.URLRequest, u.URLResponse)
+	}{
+		{
+			url:              "http://example.com",
+			wantResult:       cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
+			buildInputOutput: getRequestResponse,
+		},
+		{
+			url:              "http://example.org",
+			wantResult:       cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
+			buildInputOutput: getRequestResponse,
+		},
+	}
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
+	for _, tt := range tests {
+		t.Run("Post JSON "+tt.url, func(t *testing.T) {
+			requestObj, wantResponseObj := tt.buildInputOutput(tt.url, tt.wantResult)
+			requestBody, _ := json.Marshal(requestObj)
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			assert.Equal(t, resp.StatusCode, wantCode)
+
+			responseObj := u.URLResponse{}
+
+			err := json.NewDecoder(resp.Body).Decode(&responseObj)
+			require.NoError(t, err, "cannot read response body, should not see this normally")
+
+			assert.Equal(t, responseObj, wantResponseObj)
+		})
+	}
+}
+
+func TestJSONPostHandler_NotValidCases(t *testing.T) {
+	wantCode := 400
+	tests := []struct {
+		body string
+	}{
+		{""},
+		{" "},
+		{"abc"},
+		{"{"},
+		{"{}"},
+		{`{"key": "value"}`},
+		{`{"url": "http://example.com", "key": "value"}`}, // extra field
+		{`{"url": ""}`}, // empty url
+	}
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
+	for _, tt := range tests {
+		t.Run("Post JSON", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			assert.Equal(t, resp.StatusCode, wantCode)
+		})
+	}
+}
 
 func TestPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
 	tests := []struct {
 		url string
-		id  string
 	}{
 		{url: ""},
 	}
 
-	// Prepare empty store
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 		})
 	}
 }
@@ -54,52 +150,40 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 func TestPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
 	tests := []struct {
-		url string
-		id  string
+		url  string
+		want string
 	}{
 		{
-			url: "http://example.com",
+			url:  "http://example.com",
+			want: cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
 		},
 		{
-			url: "http://example.org",
+			url:  "http://example.org",
+			want: cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
 		},
 	}
 
-	// Fill in test cases' ids
-	for i, tt := range tests {
-		tests[i].id = u.ShortID(tt.url)
-	}
-
-	// Prepare empty store
-	store := storage.NewMapStorage()
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Post("/", urlHandler.PostHandler)
 
 	for _, tt := range tests {
 		t.Run("Post: "+tt.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, cfg.FullServerURL(), strings.NewReader(tt.url))
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(tt.url))
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 
 			resBody, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("cannot read response body, should not see this normally")
-			}
+			require.NoError(t, err, "cannot read response body, should not see this normally")
 
-			if string(resBody) != cfg.FullServerURL()+tt.id {
-				t.Errorf("want returned id [%s],  got [%s]", cfg.FullServerURL()+tt.id, resBody)
-			}
+			assert.Equal(t, string(resBody), tt.want)
 		})
 	}
 }
@@ -113,28 +197,24 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 		{id: ""},
 		{id: "NON_EXISTING_ID"},
 	}
-	// Prepare empty store
-	store := storage.NewMapStorage()
+
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.FullServerURL() + tt.id
+		requestURL := cfg.BaseURL + "/" + tt.id
 		t.Run("Get: "+requestURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d],  got [%d]", wantCode, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 		})
 	}
 }
@@ -142,51 +222,49 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 func TestGetHandler_ValidCases(t *testing.T) {
 	wantCode := 307
 	tests := []struct {
-		url string
-		id  string
+		reqURL  string
+		wantURL string
 	}{
-		{url: "http://example.com"},
-		{url: "http://example.org"},
+		{
+			reqURL:  cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
+			wantURL: "http://example.com",
+		},
+		{
+			reqURL:  cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
+			wantURL: "http://example.org",
+		},
 	}
 
-	// Fill in test cases' ids
-	for i, tt := range tests {
-		tests[i].id = u.ShortID(tt.url)
-	}
-
-	// Prepare store
-	store := storage.NewMapStorage()
-	for _, tt := range tests {
-		store.AddURL(tt.url, tt.id)
-	}
+	store, _ := storage.NewMapStorage()
 
 	router := chi.NewRouter()
-	urlHandler := handlers.URLHandler{
-		Store:      store,
-		ServerName: cfg.FullServerName(),
-	}
+	urlHandler := handlers.NewURLHandler(store, cfg)
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		requestURL := cfg.FullServerURL() + tt.id
-		t.Run("Get: "+requestURL, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
+		store.AddURL(tt.wantURL, tt.reqURL[strings.LastIndex(tt.reqURL, "/")+1:])
+		t.Run("Get: "+tt.reqURL, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.reqURL, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
 
-			if resp.StatusCode != wantCode {
-				t.Errorf("want status code [%d] but got [%d]",
-					http.StatusTemporaryRedirect, resp.StatusCode)
-			}
+			assert.Equal(t, resp.StatusCode, wantCode)
 
 			location := resp.Header.Get("Location")
 
-			if location != tt.url {
-				t.Errorf("want retirned location header [%s] but got [%s]", location, tt.url)
-			}
+			assert.Equal(t, location, tt.wantURL, "location header")
 		})
 	}
+}
 
+func getRequestResponse(url string, result string) (u.URLRequest, u.URLResponse) {
+	return u.URLRequest{
+			URL: url,
+		},
+		u.URLResponse{
+			Result: result,
+		}
 }

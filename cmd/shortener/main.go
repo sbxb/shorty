@@ -1,7 +1,11 @@
 package main
 
 import (
-	"os"
+	"context"
+	"log"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/sbxb/shorty/internal/app/api"
 	"github.com/sbxb/shorty/internal/app/config"
@@ -9,11 +13,39 @@ import (
 )
 
 func main() {
-	cfg := config.DefaultConfig
-	store := storage.NewMapStorage()
-	router := api.NewRouter(store, cfg.FullServerName())
-	server, _ := api.NewHTTPServer(cfg.FullServerName(), router)
+	var wg sync.WaitGroup
 
-	go server.WaitForInterrupt()
-	os.Exit(server.Run())
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	store, err := storage.NewFileMapStorage(cfg.FileStoragePath)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer store.Close()
+
+	router := api.NewRouter(store, cfg)
+	server, err := api.NewHTTPServer(cfg.ServerAddress, router)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer server.Close()
+
+	ctx, stop := signal.NotifyContext(
+		context.Background(), syscall.SIGTERM, syscall.SIGINT,
+	)
+	defer stop()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		server.Start(ctx)
+	}()
+
+	wg.Wait()
+	if err := store.Close(); err != nil {
+		log.Fatalln(err)
+	}
 }

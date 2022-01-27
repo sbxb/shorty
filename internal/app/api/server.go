@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -33,18 +31,12 @@ func NewHTTPServer(address string, router http.Handler) (*HTTPServer, error) {
 	}, nil
 }
 
-// WaitForInterrupt is a monitoring goroutine for catching interrupts and initiating
-// server shutdown
-func (s *HTTPServer) WaitForInterrupt() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
-	defer stop()
-	<-ctx.Done()
-	s.Close()
-}
-
 // Close gracefully stops the server. Any additional on-close actions should be added
 // here and called before idleConnsClosed channel is closed
 func (s *HTTPServer) Close() {
+	if s.srv == nil {
+		return
+	}
 	log.Println("Trying to gracefully stop HTTPServer")
 	// Perform server shutdown with a default maximum timeout of 3 seconds
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
@@ -52,22 +44,29 @@ func (s *HTTPServer) Close() {
 
 	if err := s.srv.Shutdown(timeoutCtx); err != nil {
 		// Error from closing listeners, or context timeout:
-		log.Printf("HTTPServer Shutdown(): %v", err)
+		log.Printf("HTTPServer Shutdown() failed: %v", err)
 	}
 
+	s.srv = nil
 	close(s.idleConnsClosed)
 }
 
-// Run starts the server
-// Returns exit status code
-func (s *HTTPServer) Run() int {
+// Start runs the server and creates a monitoring gorouting to wait for
+// the context to be marked done
+func (s *HTTPServer) Start(ctx context.Context) {
+	if s.srv == nil {
+		return
+	}
+	go func() {
+		<-ctx.Done()
+		s.Close()
+	}()
+
 	if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("HTTPServer ListenAndServe(): %v", err)
-		return 1
+		log.Printf("HTTPServer ListenAndServe() failed: %v", err)
+		return
 	}
 
 	<-s.idleConnsClosed
 	log.Println("HTTPServer gracefully stopped")
-
-	return 0
 }

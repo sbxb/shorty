@@ -6,6 +6,14 @@ import (
 	"math/big"
 )
 
+type URLRequest struct {
+	URL string `json:"url"`
+}
+
+type URLResponse struct {
+	Result string `json:"result"`
+}
+
 // ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number
 // MD5 is OK since we do not care about any (almost impossible) collisions
