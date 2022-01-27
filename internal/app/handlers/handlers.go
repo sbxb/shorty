@@ -34,7 +34,7 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	url, err := uh.store.GetURL(id)
-	log.Printf("[%s] [%s]\n", id, url)
+	log.Printf("GET [%s] [%s]\n", id, url)
 	if err != nil {
 		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
@@ -60,6 +60,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	url := string(b)
 	// TODO There should be some kind of URL validation
+	log.Printf("POST [%s]\n", url)
 	if url == "" {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
