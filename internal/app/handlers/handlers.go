@@ -32,8 +32,9 @@ func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 // в HTTP-заголовке Location ...
 func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	log.Printf("[%s]\n", id)
+
 	url, err := uh.store.GetURL(id)
+	log.Printf("[%s] [%s]\n", id, url)
 	if err != nil {
 		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
