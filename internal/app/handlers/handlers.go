@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -53,7 +54,19 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 // и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой
 // строки в теле ...
 func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
+	var reader io.Reader
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		reader = gz
+		defer gz.Close()
+	} else {
+		reader = r.Body
+	}
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		http.Error(w, "Server failed to read the request's body", http.StatusInternalServerError)
 		return
