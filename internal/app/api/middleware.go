@@ -5,6 +5,9 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/sbxb/shorty/internal/app/auth"
 )
 
 type gzipWriter struct {
@@ -33,5 +36,25 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("Content-Encoding", "gzip")
 		// передаём обработчику страницы переменную типа gzipWriter для вывода данных
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
+	})
+}
+
+func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("user_id")
+		if err != nil || !auth.CheckUserIdCookieValue(cookie.Value) {
+			uid, err := auth.GenerateUserId()
+			if err != nil {
+				io.WriteString(w, err.Error())
+				return
+			}
+			cookie := http.Cookie{
+				Name:    "user_id",
+				Value:   auth.GetUserIdCookieValue(uid),
+				Expires: time.Now().Add(1 * time.Hour),
+			}
+			http.SetCookie(w, &cookie)
+		}
+		next.ServeHTTP(w, r)
 	})
 }

@@ -17,10 +17,10 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 
 	urlHandler := handlers.NewURLHandler(store, cfg)
 
-	router.Get("/{id}", gzipWrapper(urlHandler.GetHandler))
-	router.Post("/", gzipWrapper(urlHandler.PostHandler))
+	router.Get("/{id}", gzipWrapper(cookieAuth(urlHandler.GetHandler)))
+	router.Post("/", gzipWrapper(cookieAuth(urlHandler.PostHandler)))
 
-	router.Post("/api/shorten", gzipWrapper(urlHandler.JSONPostHandler))
+	router.Post("/api/shorten", gzipWrapper(cookieAuth(urlHandler.JSONPostHandler)))
 
 	return router
 }
