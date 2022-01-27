@@ -35,6 +35,7 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 	url, err := uh.store.GetURL(id)
 	log.Printf("GET [%s] [%s]\n", id, url)
+	log.Printf("%#v\n", r.Header.Values("Accept-Encoding"))
 	if err != nil {
 		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
@@ -61,6 +62,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	url := string(b)
 	// TODO There should be some kind of URL validation
 	log.Printf("POST [%s]\n", url)
+	log.Printf("%#v\n", r.Header.Values("Accept-Encoding"))
 	if url == "" {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
