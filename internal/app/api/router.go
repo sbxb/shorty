@@ -24,5 +24,7 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 
 	router.Get("/user/urls", gzipWrapper(cookieAuth(urlHandler.UserGetHandler)))
 
+	router.Get("/ping", gzipWrapper(urlHandler.PingGetHandler))
+
 	return router
 }

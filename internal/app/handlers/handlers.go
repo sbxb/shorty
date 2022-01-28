@@ -2,17 +2,22 @@ package handlers
 
 import (
 	"compress/gzip"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/auth"
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/storage"
 	u "github.com/sbxb/shorty/internal/app/url"
+
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 // URLHandler defines a container for handlers and their dependencies
@@ -182,4 +187,21 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(jr)
+}
+
+func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
+	dsn := "postgres://shorty:shorty@localhost/shorty"
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		http.Error(w, "Server failed to open DB: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		http.Error(w, "Server failed to ping DB: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("OK"))
 }
