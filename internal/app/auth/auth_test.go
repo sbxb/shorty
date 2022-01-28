@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCheckUserIdCookieValue(t *testing.T) {
+func TestCheckUserIDCookieValue(t *testing.T) {
 	tests := []struct {
 		cookieValue  string
 		wantedResult bool
@@ -26,6 +26,6 @@ func TestCheckUserIdCookieValue(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.Equal(t, CheckUserIdCookieValue(tt.cookieValue), tt.wantedResult)
+		assert.Equal(t, CheckUserIDCookieValue(tt.cookieValue), tt.wantedResult)
 	}
 }

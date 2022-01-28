@@ -40,26 +40,28 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+type userkey string
+
 func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("user_id")
 		uid := ""
-		if err != nil || !auth.CheckUserIdCookieValue(cookie.Value) {
-			uid, err = auth.GenerateUserId()
+		if err != nil || !auth.CheckUserIDCookieValue(cookie.Value) {
+			uid, err = auth.GenerateUserID()
 			if err != nil {
 				io.WriteString(w, err.Error())
 				return
 			}
 			cookie := http.Cookie{
 				Name:    "user_id",
-				Value:   auth.GetUserIdCookieValue(uid),
+				Value:   auth.GetUserIDCookieValue(uid),
 				Expires: time.Now().Add(1 * time.Hour),
 			}
 			http.SetCookie(w, &cookie)
 		} else {
 			uid = cookie.Value[:32]
 		}
-		ctx := context.WithValue(r.Context(), "uid", uid)
+		ctx := context.WithValue(r.Context(), userkey("uid"), uid)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

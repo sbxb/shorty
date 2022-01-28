@@ -12,7 +12,7 @@ const secretKey = "my-super-secret-key"
 const uidBytes = 16
 const uidChars = uidBytes * 2
 
-func CheckUserIdCookieValue(value string) bool {
+func CheckUserIDCookieValue(value string) bool {
 	if len(value) != 96 {
 		return false
 	}
@@ -24,18 +24,18 @@ func CheckUserIdCookieValue(value string) bool {
 		return false
 	}
 
-	return hmac.Equal(signUserId(uid), sign)
+	return hmac.Equal(signUserID(uid), sign)
 }
 
-func GetUserIdCookieValue(uid string) string {
-	sign := signUserId(uid)
+func GetUserIDCookieValue(uid string) string {
+	sign := signUserID(uid)
 
 	return uid + hex.EncodeToString(sign)
 }
 
-// generateUserId returns 32-characters long hexadecimal string representing
+// GenerateUserID returns 32-characters long hexadecimal string representing
 // 16 random bytes (to be used as a unique user id)
-func GenerateUserId() (string, error) {
+func GenerateUserID() (string, error) {
 	b, err := generateRandomBytes(uidBytes)
 	if err != nil {
 		return "", err
@@ -44,7 +44,7 @@ func GenerateUserId() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func signUserId(uid string) []byte {
+func signUserID(uid string) []byte {
 	secret := md5.Sum([]byte(secretKey))
 	h := hmac.New(sha256.New, secret[:])
 	h.Write([]byte(uid))

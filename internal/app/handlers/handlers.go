@@ -144,6 +144,8 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jr)
 }
 
+type userkey string
+
 // UserGetHandler process GET /user/urls request
 // ... хендлер GET /user/urls, который сможет вернуть пользователю все
 // когда-либо сокращённые им URL в формате:
@@ -159,7 +161,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 	ctx := r.Context()
-	uid, _ := ctx.Value("uid").(string)
+	uid, _ := ctx.Value(userkey("uid")).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	urls, _ := uh.store.GetUserURLs(uid)
