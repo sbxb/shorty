@@ -14,6 +14,11 @@ type URLResponse struct {
 	Result string `json:"result"`
 }
 
+type UserURL struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
 // ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number
 // MD5 is OK since we do not care about any (almost impossible) collisions

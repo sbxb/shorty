@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -76,8 +77,12 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+	uid, _ := ctx.Value("uid").(string)
+	log.Printf(">>> uid [%s]\n", uid)
+
 	id := u.ShortID(url)
-	err = uh.store.AddURL(url, id)
+	err = uh.store.AddURL(url, id, uid)
 	if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
@@ -113,8 +118,12 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+	uid, _ := ctx.Value("uid").(string)
+	log.Printf(">>> uid [%s]\n", uid)
+
 	id := u.ShortID(req.URL)
-	if err := uh.store.AddURL(req.URL, id); err != nil {
+	if err := uh.store.AddURL(req.URL, id, uid); err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
 	}
@@ -132,5 +141,44 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", ContentType)
 	w.WriteHeader(http.StatusCreated)
+	w.Write(jr)
+}
+
+// UserGetHandler process GET /user/urls request
+// ... хендлер GET /user/urls, который сможет вернуть пользователю все
+// когда-либо сокращённые им URL в формате:
+// [
+//     {
+//         "short_url": "http://...",
+//         "original_url": "http://..."
+//     },
+//     ...
+// ]
+// При отсутствии сокращённых пользователем URL хендлер должен отдавать
+// HTTP-статус 204 No Content ...
+func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
+	const ContentType = "application/json"
+	ctx := r.Context()
+	uid, _ := ctx.Value("uid").(string)
+	log.Printf(">>> uid [%s]\n", uid)
+
+	urls, _ := uh.store.GetUserURLs(uid)
+
+	if len(urls) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	for i := range urls {
+		urls[i].ShortURL = uh.config.BaseURL + "/" + urls[i].ShortURL
+	}
+	jr, err := json.Marshal(urls)
+
+	if err != nil {
+		http.Error(w, "Server failed to process response result", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType)
+	w.WriteHeader(http.StatusOK)
 	w.Write(jr)
 }

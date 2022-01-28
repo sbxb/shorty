@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"strings"
 	"sync"
+
+	"github.com/sbxb/shorty/internal/app/url"
 )
 
 // MapStorage defines a simple in-memory storage implemented as a wrapper
@@ -22,11 +25,13 @@ func NewMapStorage() (*MapStorage, error) {
 
 // AddURL saves both url and its id
 // MapStorage implementation never returns non-nil error
-func (st *MapStorage) AddURL(url string, id string) error {
+func (st *MapStorage) AddURL(url string, id string, uid string) error {
 	st.Lock()
 	defer st.Unlock()
-
-	st.data[id] = url
+	if uid == "" {
+		uid = "NULL"
+	}
+	st.data[id] = uid + ";" + url
 
 	return nil
 }
@@ -38,11 +43,31 @@ func (st *MapStorage) AddURL(url string, id string) error {
 func (st *MapStorage) GetURL(id string) (string, error) {
 	st.RLock()
 	defer st.RUnlock()
-	url := st.data[id]
+	res := st.data[id]
+	if res == "" {
+		return res, nil
+	}
+	parts := strings.SplitN(res, ";", 2)
 
-	return url, nil
+	return parts[1], nil
 }
 
 func (st *MapStorage) Close() error {
 	return nil
+}
+
+func (st *MapStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
+	res := []url.UserURL{}
+	for id, str := range st.data {
+		parts := strings.SplitN(str, ";", 2)
+		if parts[0] != uid {
+			continue
+		}
+		entry := url.UserURL{
+			ShortURL:    id,
+			OriginalURL: parts[1],
+		}
+		res = append(res, entry)
+	}
+	return res, nil
 }

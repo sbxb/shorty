@@ -20,7 +20,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 
 	for _, url := range urls {
 		id := u.ShortID(url)
-		_ = store.AddURL(url, id)          // MapStorage never returns non-nil error
+		_ = store.AddURL(url, id, "")      // MapStorage never returns non-nil error
 		urlReturned, _ := store.GetURL(id) // MapStorage never returns non-nil error
 
 		assert.Equal(t, urlReturned, url)

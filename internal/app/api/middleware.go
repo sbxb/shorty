@@ -2,6 +2,7 @@ package api
 
 import (
 	"compress/gzip"
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -42,8 +43,9 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("user_id")
+		uid := ""
 		if err != nil || !auth.CheckUserIdCookieValue(cookie.Value) {
-			uid, err := auth.GenerateUserId()
+			uid, err = auth.GenerateUserId()
 			if err != nil {
 				io.WriteString(w, err.Error())
 				return
@@ -54,7 +56,10 @@ func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 				Expires: time.Now().Add(1 * time.Hour),
 			}
 			http.SetCookie(w, &cookie)
+		} else {
+			uid = cookie.Value[:32]
 		}
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), "uid", uid)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

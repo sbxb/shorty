@@ -24,7 +24,7 @@ func TestFileMapStorage_Write_And_Read_File(t *testing.T) {
 
 	for _, url := range urls {
 		id := u.ShortID(url)
-		_ = store.AddURL(url, id) // MapStorage never returns non-nil error
+		_ = store.AddURL(url, id, "") // MapStorage never returns non-nil error
 	}
 
 	store.Close()
