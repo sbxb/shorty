@@ -40,8 +40,6 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-type userkey string
-
 func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("user_id")
@@ -61,7 +59,7 @@ func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 		} else {
 			uid = cookie.Value[:32]
 		}
-		ctx := context.WithValue(r.Context(), userkey("uid"), uid)
+		ctx := context.WithValue(r.Context(), auth.Userkey("uid"), uid)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

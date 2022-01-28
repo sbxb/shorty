@@ -12,6 +12,8 @@ const secretKey = "my-super-secret-key"
 const uidBytes = 16
 const uidChars = uidBytes * 2
 
+type Userkey string
+
 func CheckUserIDCookieValue(value string) bool {
 	if len(value) != 96 {
 		return false
