@@ -59,7 +59,7 @@ func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 		} else {
 			uid = cookie.Value[:32]
 		}
-		ctx := context.WithValue(r.Context(), auth.Userkey("uid"), uid)
+		ctx := context.WithValue(r.Context(), auth.ContextUserIDKey, uid)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

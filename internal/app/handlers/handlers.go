@@ -79,7 +79,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	uid, _ := ctx.Value("uid").(string)
+	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	id := u.ShortID(url)
@@ -120,7 +120,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	uid, _ := ctx.Value("uid").(string)
+	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	id := u.ShortID(req.URL)
@@ -160,7 +160,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 	ctx := r.Context()
-	uid, _ := ctx.Value(auth.Userkey("uid")).(string)
+	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	urls, _ := uh.store.GetUserURLs(uid)
