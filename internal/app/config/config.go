@@ -16,6 +16,7 @@ type Config struct {
 	ServerAddress   string
 	BaseURL         string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
 var defaultConfig = Config{
@@ -25,7 +26,8 @@ var defaultConfig = Config{
 
 // New creates config by merging default settings with flags, then with env variables
 // The last nonempty value takes precedence (default < flag < env) except for
-// FILE_STORAGE_PATH env variable which overrides -f flag even if empty
+// FILE_STORAGE_PATH / DATABASE_DSN env variables which overrides -f / -d flags
+// even if empty
 // New also handles validation and returns non-nil error if validation failed
 func New() (Config, error) {
 	c := defaultConfig
@@ -39,6 +41,7 @@ func (c *Config) parseFlags() {
 	flag.StringVar(&c.ServerAddress, "a", defaultServerAddress, "network address the server listens on")
 	flag.StringVar(&c.BaseURL, "b", defaultBaseURL, "resulting base URL")
 	flag.StringVar(&c.FileStoragePath, "f", "", `storage file (default "")`)
+	flag.StringVar(&c.DatabaseDSN, "d", "", `database dsn (default "")`)
 
 	flag.Parse()
 }
@@ -58,6 +61,12 @@ func (c *Config) parseEnvVars() {
 	if ok {
 		// empty string is valid here, overrides -f flag and returns the default ""
 		c.FileStoragePath = fsp
+	}
+
+	dd, ok := os.LookupEnv("DATABASE_DSN")
+	if ok {
+		// empty string is valid here, overrides -d flag and returns the default ""
+		c.DatabaseDSN = dd
 	}
 }
 

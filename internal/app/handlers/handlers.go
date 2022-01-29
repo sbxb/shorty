@@ -16,8 +16,6 @@ import (
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/storage"
 	u "github.com/sbxb/shorty/internal/app/url"
-
-	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 // URLHandler defines a container for handlers and their dependencies
@@ -32,6 +30,8 @@ func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 		config: cfg,
 	}
 }
+
+var Database *sql.DB
 
 // GetHandler process GET /{id} request
 // ... Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
@@ -190,16 +190,14 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
-	dsn := "postgres://shorty:shorty@localhost/shorty"
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		http.Error(w, "Server failed to open DB: "+err.Error(), http.StatusInternalServerError)
+	if Database == nil {
+		http.Error(w, "Server failed to open DB", http.StatusInternalServerError)
 		return
 	}
-	defer db.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
+	if err := Database.PingContext(ctx); err != nil {
 		http.Error(w, "Server failed to ping DB: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
