@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"compress/gzip"
-	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/auth"
@@ -31,7 +28,7 @@ func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 	}
 }
 
-var Database *sql.DB
+var Database *storage.DBStorage
 
 // GetHandler process GET /{id} request
 // ... Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
@@ -195,9 +192,7 @@ func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	if err := Database.PingContext(ctx); err != nil {
+	if err := Database.Ping(); err != nil {
 		http.Error(w, "Server failed to ping DB: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

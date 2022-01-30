@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os/signal"
 	"sync"
@@ -24,16 +23,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	var db *sql.DB
 	if cfg.DatabaseDSN != "" {
-		db, err = sql.Open("pgx", cfg.DatabaseDSN)
+		auxDB, err := storage.NewDBStorage(cfg.DatabaseDSN)
 		if err != nil {
 			log.Println("Server failed to open DB: " + err.Error())
-			db = nil
 		} else {
-			defer db.Close()
+			defer auxDB.Close()
+			handlers.Database = auxDB
 		}
-		handlers.Database = db
 	}
 
 	store, err := storage.NewFileMapStorage(cfg.FileStoragePath)
