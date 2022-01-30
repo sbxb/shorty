@@ -28,8 +28,6 @@ func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 	}
 }
 
-var Database *storage.DBStorage
-
 // GetHandler process GET /{id} request
 // ... Эндпоинт GET /{id} принимает в качестве URL-параметра идентификатор
 // сокращённого URL и возвращает ответ с кодом 307 и оригинальным URL
@@ -187,12 +185,13 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
-	if Database == nil {
+	dbStore, ok := uh.store.(*storage.DBStorage)
+	if !ok {
 		http.Error(w, "Server failed to open DB", http.StatusInternalServerError)
 		return
 	}
 
-	if err := Database.Ping(); err != nil {
+	if err := dbStore.Ping(); err != nil {
 		http.Error(w, "Server failed to ping DB: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

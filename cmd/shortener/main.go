@@ -9,7 +9,6 @@ import (
 
 	"github.com/sbxb/shorty/internal/app/api"
 	"github.com/sbxb/shorty/internal/app/config"
-	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
 )
 
@@ -21,17 +20,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if cfg.DatabaseDSN != "" {
-		auxDB, err := storage.NewDBStorage(cfg.DatabaseDSN)
-		if err != nil {
-			log.Println("Server failed to open DB: " + err.Error())
-		} else {
-			defer auxDB.Close()
-			handlers.Database = auxDB
-		}
-	}
+	var store storage.Storage
 
-	store, err := storage.NewFileMapStorage(cfg.FileStoragePath)
+	if cfg.DatabaseDSN != "" {
+		store, err = storage.NewDBStorage(cfg.DatabaseDSN)
+	} else {
+		store, err = storage.NewFileMapStorage(cfg.FileStoragePath)
+	}
 	if err != nil {
 		log.Fatalln(err)
 	}
