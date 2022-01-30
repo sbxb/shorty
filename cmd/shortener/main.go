@@ -11,8 +11,6 @@ import (
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/handlers"
 	"github.com/sbxb/shorty/internal/app/storage"
-
-	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 func main() {

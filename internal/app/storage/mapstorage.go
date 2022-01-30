@@ -52,10 +52,6 @@ func (st *MapStorage) GetURL(id string) (string, error) {
 	return parts[1], nil
 }
 
-func (st *MapStorage) Close() error {
-	return nil
-}
-
 func (st *MapStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
 	res := []url.UserURL{}
 	for id, str := range st.data {
@@ -70,4 +66,8 @@ func (st *MapStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
 		res = append(res, entry)
 	}
 	return res, nil
+}
+
+func (st *MapStorage) Close() error {
+	return nil
 }
