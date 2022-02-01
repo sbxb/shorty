@@ -105,6 +105,34 @@ func (st *DBStorage) AddURL(url string, id string, uid string) error {
 	return nil
 }
 
+func (st *DBStorage) AddBatchURL(batch []url.BatchURLEntry, uid string) error {
+	if uid == "" {
+		uid = "NULL"
+	}
+
+	tx, err := st.db.Begin()
+	if err != nil {
+		return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
+	}
+	defer tx.Rollback()
+
+	URLsTableName := "urls"
+	stmt, err := tx.Prepare(`INSERT INTO ` + URLsTableName + `(url_id, user_id, original_url)
+		VALUES($1, $2, $3)`)
+	if err != nil {
+		return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
+	}
+	defer stmt.Close()
+
+	for _, e := range batch {
+		if _, err = stmt.Exec(e.ShortURL, uid, e.OriginalURL); err != nil {
+			return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
+		}
+	}
+
+	return tx.Commit()
+}
+
 // GetURL searches for url by its id
 // Returns url found or an empty string for a nonexistent id (valid url is
 // never an empty string)

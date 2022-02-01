@@ -12,6 +12,28 @@ package storage_test
 
 // const dsn = "postgres://shorty:shorty@localhost/shortytest"
 
+// func TestDBStorage_AddBatch(t *testing.T) {
+// 	batch := []u.BatchURLEntry{
+// 		{
+// 			CorrelationID: "123",
+// 			OriginalURL:   "http://example.com",
+// 			ShortURL:      "/5agFZWrIb6Ej21QvYUNBL3",
+// 		},
+// 		{
+// 			CorrelationID: "456",
+// 			OriginalURL:   "http://example.org",
+// 			ShortURL:      "/6EH6vwAy9dOyyNbopTS6M4",
+// 		},
+// 	}
+
+// 	store, err := storage.NewDBStorage(dsn)
+// 	require.NoError(t, err)
+// 	_ = store.Truncate()
+
+// 	err = store.AddBatchURL(batch, "")
+// 	require.NoError(t, err)
+// }
+
 // func TestDBStorage_Add_then_Get(t *testing.T) {
 // 	urls := []string{
 // 		"http://example.com",

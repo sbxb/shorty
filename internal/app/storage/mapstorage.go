@@ -36,6 +36,19 @@ func (st *MapStorage) AddURL(url string, id string, uid string) error {
 	return nil
 }
 
+func (st *MapStorage) AddBatchURL(batch []url.BatchURLEntry, uid string) error {
+	st.Lock()
+	defer st.Unlock()
+	if uid == "" {
+		uid = "NULL"
+	}
+	for _, e := range batch {
+		st.data[e.ShortURL] = uid + ";" + e.OriginalURL
+	}
+
+	return nil
+}
+
 // GetURL searches for url by its id
 // Returns url found or an empty string for a nonexistent id (valid url is
 // never an empty string)
