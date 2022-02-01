@@ -93,6 +93,68 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s/%s", uh.config.BaseURL, id)
 }
 
+// JSONBatchPostHandler process POST /api/shorten/batch request with JSON array payload
+func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request) {
+	const ContentType = "application/json"
+	batch := []u.BatchURLRequestEntry{}
+
+	if r.Header.Get("Content-Type") != ContentType {
+		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
+		return
+	}
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&batch); err != nil {
+		http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// check if request array contains empty or incomplete records
+	if !u.IsBatchURLRequestValid(batch) {
+		http.Error(w, "Bad request: empty or incomplete records received", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
+	log.Printf(">>> uid [%s]\n", uid)
+
+	// we're ready to start processing
+	respBatch := make([]u.BatchURLEntry, 0, len(batch))
+	for _, entry := range batch {
+		ne := u.BatchURLEntry{
+			CorrelationID: entry.CorrelationID,
+			OriginalURL:   entry.OriginalURL,
+			ShortURL:      u.ShortID(entry.OriginalURL),
+		}
+		respBatch = append(respBatch, ne)
+	}
+
+	// Storage staff starts here
+	if err := uh.store.AddBatchURL(respBatch, uid); err != nil {
+		http.Error(w, "Server failed to store URL(s)", http.StatusInternalServerError)
+		return
+	}
+	// Storage stuff stops here
+
+	for i := range respBatch {
+		respBatch[i].ShortURL = uh.config.BaseURL + "/" + respBatch[i].ShortURL
+	}
+
+	//w.Write([]byte(fmt.Sprintf("%+v", respBatch)))
+	jr, err := json.Marshal(respBatch)
+	if err != nil {
+		http.Error(w, "Server failed to process response result", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", ContentType)
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jr)
+}
+
 // JSONPostHandler process POST /api/shorten request with JSON payload
 // ... эндпоинт POST /api/shorten, принимающий в теле запроса JSON-объект
 // {"url": "<some_url>"} и возвращающий в ответ объект {"result": "<shorten_url>"}

@@ -35,6 +35,100 @@ var _ = func() bool {
 	return true
 }()
 
+func TestJSONBatchPostHandler_NotValidCases(t *testing.T) {
+	wantCode := 400
+	tests := []struct {
+		body string
+	}{
+		{""},
+		{" "},
+		{"abc"},
+		{"{"},
+		{"{}"},
+		{`{"key": "value"}`},
+		{`{"correlation_id": "123", "original_url": "http://example.com"}`}, // not within an array
+		{"["},
+		{`[{"key": "value"}]`},
+		{`[{"correlation_id": "123", "original_url": "http://example.com", "extra": "field"}]`}, // extra field
+		{`[]`},                          // empty array
+		{`[{"correlation_id": "123"}]`}, // no field
+		{`[{"correlation_id": "", "original_url": "http://example.com"}]`}, // empty field
+		//{`[{"correlation_id": "123", "original_url": "http://example.com"}]`}, // valid, commented only
+	}
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/api/shorten/batch", urlHandler.JSONBatchPostHandler)
+
+	for _, tt := range tests {
+		t.Run("Post JSON", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten/batch", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			//resBody, _ := io.ReadAll(resp.Body)
+			assert.Equal(t, resp.StatusCode, wantCode)
+			//t.Log(string(resBody))
+		})
+	}
+}
+
+func TestJSONBatchPostHandler_ValidCases(t *testing.T) {
+	wantCode := 201
+	requestObj := []u.BatchURLRequestEntry{
+		{
+			CorrelationID: "123",
+			OriginalURL:   "http://example.com",
+		},
+		{
+			CorrelationID: "456",
+			OriginalURL:   "http://example.org",
+		},
+	}
+
+	wantResponseObj := []u.BatchURLEntry{
+		{
+			CorrelationID: "123",
+			OriginalURL:   "",
+			ShortURL:      cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3",
+		},
+		{
+			CorrelationID: "456",
+			OriginalURL:   "",
+			ShortURL:      cfg.BaseURL + "/6EH6vwAy9dOyyNbopTS6M4",
+		},
+	}
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/api/shorten/batch", urlHandler.JSONBatchPostHandler)
+
+	requestBody, _ := json.Marshal(requestObj)
+	req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten/batch", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	assert.Equal(t, resp.StatusCode, wantCode)
+
+	responseObj := []u.BatchURLEntry{}
+
+	err := json.NewDecoder(resp.Body).Decode(&responseObj)
+	require.NoError(t, err, "cannot read response body, should not see this normally")
+
+	assert.Equal(t, responseObj, wantResponseObj)
+}
+
 func TestJSONPostHandler_ValidCases(t *testing.T) {
 	wantCode := 201
 	tests := []struct {

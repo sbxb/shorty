@@ -19,6 +19,19 @@ type UserURL struct {
 	OriginalURL string `json:"original_url"`
 }
 
+type BatchURLRequestEntry struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+//type BatchURLResponse []BatchURLResponseEntry
+
+type BatchURLEntry struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"-"`
+	ShortURL      string `json:"short_url"`
+}
+
 // ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number
 // MD5 is OK since we do not care about any (almost impossible) collisions
@@ -33,4 +46,17 @@ func ShortID(url string) string {
 	n.SetString(strHash, 16)
 
 	return n.Text(62)
+}
+
+func IsBatchURLRequestValid(batch []BatchURLRequestEntry) bool {
+	if len(batch) == 0 {
+		return false
+	}
+	for _, u := range batch {
+		if u.CorrelationID == "" || u.OriginalURL == "" {
+			return false
+		}
+	}
+
+	return true
 }
