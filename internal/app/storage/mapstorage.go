@@ -1,11 +1,25 @@
 package storage
 
 import (
+	"fmt"
+	"log"
 	"strings"
 	"sync"
 
 	"github.com/sbxb/shorty/internal/app/url"
 )
+
+type IDConflictError struct {
+	ID string
+}
+
+func (ice *IDConflictError) Error() string {
+	return fmt.Sprintf("Storage already has a record with id %s", ice.ID)
+}
+
+func NewIDConflictError(id string) error {
+	return &IDConflictError{id}
+}
 
 // MapStorage defines a simple in-memory storage implemented as a wrapper
 // aroung Go map
@@ -24,12 +38,15 @@ func NewMapStorage() (*MapStorage, error) {
 }
 
 // AddURL saves both url and its id
-// MapStorage implementation never returns non-nil error
 func (st *MapStorage) AddURL(url string, id string, uid string) error {
 	st.Lock()
 	defer st.Unlock()
 	if uid == "" {
 		uid = "NULL"
+	}
+	if _, ok := st.data[id]; ok {
+		log.Println(">>> MapStorage: Repeated id found: ", id)
+		return NewIDConflictError(id)
 	}
 	st.data[id] = uid + ";" + url
 
