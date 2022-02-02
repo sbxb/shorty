@@ -3,6 +3,7 @@ package handlers
 import (
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -78,18 +79,24 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	status := http.StatusCreated
+
 	ctx := r.Context()
 	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	id := u.ShortID(url)
 	err = uh.store.AddURL(url, id, uid)
-	if err != nil {
+
+	var conflictError *storage.IDConflictError
+	if errors.As(err, &conflictError) {
+		status = http.StatusConflict
+	} else if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status)
 	fmt.Fprintf(w, "%s/%s", uh.config.BaseURL, id)
 }
 
@@ -181,12 +188,18 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	status := http.StatusCreated
+
 	ctx := r.Context()
 	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
 	log.Printf(">>> uid [%s]\n", uid)
 
 	id := u.ShortID(req.URL)
-	if err := uh.store.AddURL(req.URL, id, uid); err != nil {
+	err := uh.store.AddURL(req.URL, id, uid)
+	var conflictError *storage.IDConflictError
+	if errors.As(err, &conflictError) {
+		status = http.StatusConflict
+	} else if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
 		return
 	}
@@ -203,7 +216,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", ContentType)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status)
 	w.Write(jr)
 }
 

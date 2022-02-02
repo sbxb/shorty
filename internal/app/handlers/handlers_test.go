@@ -178,6 +178,43 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 	}
 }
 
+func TestJSONPostHandler_InputRepeated(t *testing.T) {
+	wantCode := 409
+	requestObj := u.URLRequest{URL: "http://example.com"}
+	wantResponseObj := u.URLResponse{Result: cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3"}
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+
+	requestBody, _ := json.Marshal(requestObj)
+
+	// send the request
+	req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// ... and the same request once more
+	req = httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	assert.Equal(t, resp.StatusCode, wantCode)
+
+	responseObj := u.URLResponse{}
+
+	err := json.NewDecoder(resp.Body).Decode(&responseObj)
+	require.NoError(t, err, "cannot read response body, should not see this normally")
+	assert.Equal(t, responseObj, wantResponseObj)
+}
+
 func TestJSONPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
 	tests := []struct {
@@ -280,6 +317,38 @@ func TestPostHandler_ValidCases(t *testing.T) {
 			assert.Equal(t, string(resBody), tt.want)
 		})
 	}
+}
+
+func TestPostHandler_InputRepeated(t *testing.T) {
+	wantCode := 409
+	url := "http://example.com"
+	want := cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3"
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Post("/", urlHandler.PostHandler)
+
+	// send the request
+	req := httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(url))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// ... and the same request once more
+	req = httptest.NewRequest(http.MethodPost, cfg.BaseURL+"/", strings.NewReader(url))
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	assert.Equal(t, resp.StatusCode, wantCode)
+
+	resBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err, "cannot read response body, should not see this normally")
+
+	assert.Equal(t, string(resBody), want)
 }
 
 func TestGetHandler_NotValidCases(t *testing.T) {
