@@ -8,9 +8,11 @@ import (
 	"encoding/hex"
 )
 
-const secretKey = "my-super-secret-key"
-const uidBytes = 16
-const uidChars = uidBytes * 2
+const (
+	secretKey = "my-super-secret-key"
+	uidBytes  = 16
+	uidChars  = uidBytes * 2
+)
 
 type contextKey string
 

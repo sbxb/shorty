@@ -22,7 +22,7 @@ func NewIDConflictError(id string) error {
 }
 
 // MapStorage defines a simple in-memory storage implemented as a wrapper
-// aroung Go map
+// around Go map
 type MapStorage struct {
 	sync.RWMutex
 

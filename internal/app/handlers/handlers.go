@@ -3,14 +3,11 @@ package handlers
 import (
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/sbxb/shorty/internal/app/auth"
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/storage"
 	u "github.com/sbxb/shorty/internal/app/url"
@@ -81,15 +78,12 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := http.StatusCreated
 
-	ctx := r.Context()
-	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
-	log.Printf(">>> uid [%s]\n", uid)
+	uid := GetUserID(r.Context())
 
 	id := u.ShortID(url)
 	err = uh.store.AddURL(url, id, uid)
 
-	var conflictError *storage.IDConflictError
-	if errors.As(err, &conflictError) {
+	if IsConflictError(err) {
 		status = http.StatusConflict
 	} else if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
@@ -101,6 +95,23 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // JSONBatchPostHandler process POST /api/shorten/batch request with JSON array payload
+// ... хендлер POST /api/shorten/batch, принимающий в теле запроса множество
+// URL для сокращения в формате:
+// [
+//    {
+//        "correlation_id": "<строковый идентификатор>",
+//        "original_url": "<URL для сокращения>"
+//    }, ...
+// ]
+//
+// В качестве ответа хендлер должен возвращать данные в формате:
+//
+// [
+//    {
+//        "correlation_id": "<строковый идентификатор из объекта запроса>",
+//        "short_url": "<результирующий сокращённый URL>"
+//    }, ...
+// ]
 func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 	batch := []u.BatchURLRequestEntry{}
@@ -124,9 +135,7 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ctx := r.Context()
-	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
-	log.Printf(">>> uid [%s]\n", uid)
+	uid := GetUserID(r.Context())
 
 	// we're ready to start processing
 	respBatch := make([]u.BatchURLEntry, 0, len(batch))
@@ -190,14 +199,12 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := http.StatusCreated
 
-	ctx := r.Context()
-	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
-	log.Printf(">>> uid [%s]\n", uid)
+	uid := GetUserID(r.Context())
 
 	id := u.ShortID(req.URL)
 	err := uh.store.AddURL(req.URL, id, uid)
-	var conflictError *storage.IDConflictError
-	if errors.As(err, &conflictError) {
+
+	if IsConflictError(err) {
 		status = http.StatusConflict
 	} else if err != nil {
 		http.Error(w, "Server failed to store URL", http.StatusInternalServerError)
@@ -227,16 +234,14 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 //     {
 //         "short_url": "http://...",
 //         "original_url": "http://..."
-//     },
-//     ...
+//     }, ...
 // ]
 // При отсутствии сокращённых пользователем URL хендлер должен отдавать
 // HTTP-статус 204 No Content ...
 func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
-	ctx := r.Context()
-	uid, _ := ctx.Value(auth.ContextUserIDKey).(string)
-	log.Printf(">>> uid [%s]\n", uid)
+
+	uid := GetUserID(r.Context())
 
 	urls, _ := uh.store.GetUserURLs(uid)
 
@@ -259,6 +264,10 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jr)
 }
 
+// PingGetHandler process GET /ping request
+// ... хендлер GET /ping, который при запросе проверяет соединение с базой
+// данных. При успешной проверке хендлер должен вернуть HTTP-статус 200 OK,
+// при неуспешной — 500 Internal Server Error ...
 func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
 	dbStore, ok := uh.store.(*storage.DBStorage)
 	if !ok {

@@ -12,8 +12,8 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-// DBStorage defines a simple in-memory storage implemented as a wrapper
-// aroung Go map
+// DBStorage defines a database storage implemented as a wrapper
+// around any database/sql implementation
 type DBStorage struct {
 	db *sql.DB
 }
@@ -199,9 +199,11 @@ func (st *DBStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
 func (st *DBStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
+
 	if err := st.db.PingContext(ctx); err != nil {
 		return fmt.Errorf("DBStorage: %v", err)
 	}
+
 	return nil
 }
 

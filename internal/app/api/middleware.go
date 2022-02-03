@@ -35,7 +35,7 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 		defer gz.Close()
 
 		w.Header().Set("Content-Encoding", "gzip")
-		// передаём обработчику страницы переменную типа gzipWriter для вывода данных
+
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, Writer: gz}, r)
 	})
 }
