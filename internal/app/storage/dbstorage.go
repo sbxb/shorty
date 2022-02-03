@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sbxb/shorty/internal/app/url"
@@ -55,7 +56,8 @@ func createTables(db *sql.DB) error {
 		id INT primary key GENERATED ALWAYS AS IDENTITY,
 		url_id VARCHAR(512) NOT NULL,
 		user_id VARCHAR(512) NOT NULL,
-		original_url TEXT NOT NULL
+		original_url TEXT NOT NULL,
+		UNIQUE (url_id)
 	)`
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
@@ -92,6 +94,10 @@ func (st *DBStorage) AddURL(url string, id string, uid string) error {
 
 	result, err := st.db.ExecContext(ctx, AddURLQuery, id, uid, url)
 	if err != nil {
+		if strings.Contains(err.Error(), "SQLSTATE 23505") {
+			return NewIDConflictError(id)
+		}
+		//log.Printf(">>> DBStorage: [%v] [%T]", err, err)
 		return fmt.Errorf("DBStorage: AddURL: %v", err)
 	}
 	rows, err := result.RowsAffected()

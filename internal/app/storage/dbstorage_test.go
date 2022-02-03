@@ -69,3 +69,18 @@ package storage_test
 
 // 	assert.Empty(t, urlReturned)
 // }
+
+// func TestDBStorage_Add_Record_Twice(t *testing.T) {
+// 	url := "http://example.com"
+
+// 	store, err := storage.NewDBStorage(dsn)
+// 	require.NoError(t, err)
+// 	_ = store.Truncate()
+
+// 	id := u.ShortID(url)
+// 	_ = store.AddURL(url, id, "")   // once
+// 	err = store.AddURL(url, id, "") // twice
+
+// 	var conflictError *storage.IDConflictError
+// 	require.ErrorAs(t, err, &conflictError)
+// }
