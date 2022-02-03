@@ -20,9 +20,6 @@ func GetUserID(ctx context.Context) string {
 
 func IsConflictError(err error) bool {
 	var conflictError *storage.IDConflictError
-	if errors.As(err, &conflictError) {
-		return true
-	}
 
-	return false
+	return errors.As(err, &conflictError)
 }
