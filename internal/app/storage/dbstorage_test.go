@@ -35,6 +35,30 @@ package storage_test
 // 	require.NoError(t, err)
 // }
 
+// func TestDBStorage_AddBatchTwice(t *testing.T) {
+// 	batch := []url.BatchURLEntry{
+// 		{
+// 			CorrelationID: "123",
+// 			OriginalURL:   "http://example.com",
+// 			ShortURL:      "/5agFZWrIb6Ej21QvYUNBL3",
+// 		},
+// 		{
+// 			CorrelationID: "456",
+// 			OriginalURL:   "http://example.org",
+// 			ShortURL:      "/6EH6vwAy9dOyyNbopTS6M4",
+// 		},
+// 	}
+
+// 	store, err := storage.NewDBStorage(dsn)
+// 	require.NoError(t, err)
+// 	_ = store.Truncate()
+
+// 	err = store.AddBatchURL(context.Background(), batch, "") // once
+// 	require.NoError(t, err)
+// 	err = store.AddBatchURL(context.Background(), batch, "") // twice
+// 	require.NoError(t, err)
+// }
+
 // func TestDBStorage_Add_then_Get(t *testing.T) {
 // 	entries := []url.URLEntry{
 // 		{
@@ -87,7 +111,8 @@ package storage_test
 
 // 	ctx := context.Background()
 
-// 	_ = store.AddURL(ctx, ue, "")   // once
+// 	err = store.AddURL(ctx, ue, "") // once
+// 	require.NoError(t, err)
 // 	err = store.AddURL(ctx, ue, "") // twice
 
 // 	var conflictError *storage.IDConflictError

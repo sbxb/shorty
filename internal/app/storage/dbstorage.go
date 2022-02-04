@@ -15,7 +15,8 @@ import (
 // DBStorage defines a database storage implemented as a wrapper
 // around any database/sql implementation
 type DBStorage struct {
-	db *sql.DB
+	db       *sql.DB
+	urlTable string
 }
 
 // DBStorage implements Storage interface
@@ -33,7 +34,7 @@ func NewDBStorage(dsn string) (*DBStorage, error) {
 		return nil, fmt.Errorf("DBStorage: Open: %v", err)
 	}
 
-	// Let's ping the database before returning DBStorage instance
+	// ping the database before returning DBStorage instance
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
@@ -41,18 +42,18 @@ func NewDBStorage(dsn string) (*DBStorage, error) {
 		return nil, fmt.Errorf("DBStorage: Ping: %v", err)
 	}
 
-	// Let's create all the necessary tables in the database
-	if err := createTables(db); err != nil {
+	// create all the necessary tables in the database
+	urlTable := "urls"
+	if err := createTables(db, urlTable); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("DBStorage: Create Tables: %v", err)
 	}
 
-	return &DBStorage{db: db}, nil
+	return &DBStorage{db: db, urlTable: urlTable}, nil
 }
 
-func createTables(db *sql.DB) error {
-	URLsTableName := "urls"
-	URLsTableQuery := `CREATE TABLE IF NOT EXISTS ` + URLsTableName + ` (
+func createTables(db *sql.DB, urlTable string) error {
+	URLsTableQuery := `CREATE TABLE IF NOT EXISTS ` + urlTable + ` (
 		id INT primary key GENERATED ALWAYS AS IDENTITY,
 		url_id VARCHAR(512) NOT NULL,
 		user_id VARCHAR(512) NOT NULL,
@@ -70,8 +71,7 @@ func createTables(db *sql.DB) error {
 }
 
 func (st *DBStorage) Truncate() error {
-	URLsTableName := "urls"
-	URLsTableQuery := `TRUNCATE ` + URLsTableName + ` RESTART IDENTITY`
+	URLsTableQuery := `TRUNCATE ` + st.urlTable + ` RESTART IDENTITY`
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	if _, err := st.db.ExecContext(ctx, URLsTableQuery); err != nil {
@@ -83,13 +83,7 @@ func (st *DBStorage) Truncate() error {
 
 // AddURL saves both url and its id
 func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string) error {
-	// FIXME use empty strings
-	if userID == "" {
-		userID = "NULL"
-	}
-	// FIXME use common st field instead of a local var
-	URLsTableName := "urls"
-	AddURLQuery := `INSERT INTO ` + URLsTableName + `(url_id, user_id, original_url) 
+	AddURLQuery := `INSERT INTO ` + st.urlTable + `(url_id, user_id, original_url) 
 		VALUES($1, $2, $3)`
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -99,7 +93,6 @@ func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string)
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
 			return NewIDConflictError(ue.ShortURL)
 		}
-		//log.Printf(">>> DBStorage: [%v] [%T]", err, err)
 		return fmt.Errorf("DBStorage: AddURL: %v", err)
 	}
 	rows, err := result.RowsAffected()
@@ -114,20 +107,14 @@ func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string)
 }
 
 func (st *DBStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error {
-	// FIXME use empty strings
-	if userID == "" {
-		userID = "NULL"
-	}
-
 	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
 	}
 	defer tx.Rollback()
 
-	URLsTableName := "urls"
-	stmt, err := tx.Prepare(`INSERT INTO ` + URLsTableName + `(url_id, user_id, original_url)
-		VALUES($1, $2, $3)`)
+	stmt, err := tx.Prepare(`INSERT INTO ` + st.urlTable + `(url_id, user_id, original_url)
+		VALUES($1, $2, $3) ON CONFLICT(url_id) DO NOTHING`)
 	if err != nil {
 		return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
 	}
@@ -147,8 +134,7 @@ func (st *DBStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry,
 // never an empty string)
 func (st *DBStorage) GetURL(id string) (string, error) {
 	var url string
-	URLsTableName := "urls"
-	GetURLQuery := `SELECT original_url FROM ` + URLsTableName + ` WHERE 
+	GetURLQuery := `SELECT original_url FROM ` + st.urlTable + ` WHERE 
 		url_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
@@ -168,8 +154,7 @@ func (st *DBStorage) GetURL(id string) (string, error) {
 func (st *DBStorage) GetUserURLs(userID string) ([]url.URLEntry, error) {
 	res := []url.URLEntry{}
 
-	URLsTableName := "urls"
-	GetUserURLsQuery := `SELECT url_id, original_url FROM ` + URLsTableName + ` WHERE 
+	GetUserURLsQuery := `SELECT url_id, original_url FROM ` + st.urlTable + ` WHERE 
 		user_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
