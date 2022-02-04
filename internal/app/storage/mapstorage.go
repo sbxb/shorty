@@ -42,9 +42,7 @@ func NewMapStorage() (*MapStorage, error) {
 func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string) error {
 	st.Lock()
 	defer st.Unlock()
-	if userID == "" {
-		userID = "NULL"
-	}
+
 	if _, ok := st.data[ue.ShortURL]; ok {
 		log.Println(">>> MapStorage: Repeated id found: ", ue.ShortURL)
 		return NewIDConflictError(ue.ShortURL)
@@ -57,10 +55,7 @@ func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string
 func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error {
 	st.Lock()
 	defer st.Unlock()
-	// TODO check if empty string could be used in split at GetURL()
-	if userID == "" {
-		userID = "NULL"
-	}
+
 	for _, ue := range batch {
 		st.data[ue.ShortURL] = userID + ";" + ue.OriginalURL
 	}

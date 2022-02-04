@@ -49,14 +49,15 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 	scanner := bufio.NewScanner(st.file)
 	for scanner.Scan() {
 		input := strings.Fields(scanner.Text())
-		if len(input) != 3 {
+		if len(input) != 2 {
 			continue
 		}
+		parts := strings.SplitN(input[1], ";", 2)
 		ue := url.URLEntry{
 			ShortURL:    input[0],
-			OriginalURL: input[2],
+			OriginalURL: parts[1],
 		}
-		userID := input[1]
+		userID := parts[0]
 		st.AddURL(context.Background(), ue, userID)
 	}
 
@@ -102,7 +103,7 @@ func (st *FileMapStorage) SaveRecordsToFile() error {
 	var wErr error = nil
 	w := bufio.NewWriter(st.file)
 	for id, uu := range st.data {
-		_, wErr = w.WriteString(fmt.Sprintf("%s\t%s\n", id, strings.Replace(uu, ";", "\t", 1)))
+		_, wErr = w.WriteString(fmt.Sprintf("%s\t%s\n", id, uu))
 		if wErr != nil {
 			break
 		}
