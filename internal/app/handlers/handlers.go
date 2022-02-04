@@ -78,10 +78,14 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := http.StatusCreated
 
-	uid := GetUserID(r.Context())
+	userID := GetUserID(r.Context())
 
-	id := u.ShortID(url)
-	err = uh.store.AddURL(url, id, uid)
+	ue := u.URLEntry{
+		ShortURL:    u.ShortID(url),
+		OriginalURL: url,
+	}
+
+	err = uh.store.AddURL(r.Context(), ue, userID)
 
 	if IsConflictError(err) {
 		status = http.StatusConflict
@@ -91,7 +95,7 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(status)
-	fmt.Fprintf(w, "%s/%s", uh.config.BaseURL, id)
+	fmt.Fprintf(w, "%s/%s", uh.config.BaseURL, ue.ShortURL)
 }
 
 // JSONBatchPostHandler process POST /api/shorten/batch request with JSON array payload
@@ -135,7 +139,7 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	uid := GetUserID(r.Context())
+	userID := GetUserID(r.Context())
 
 	// we're ready to start processing
 	respBatch := make([]u.BatchURLEntry, 0, len(batch))
@@ -149,7 +153,7 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Storage staff starts here
-	if err := uh.store.AddBatchURL(respBatch, uid); err != nil {
+	if err := uh.store.AddBatchURL(r.Context(), respBatch, userID); err != nil {
 		http.Error(w, "Server failed to store URL(s)", http.StatusInternalServerError)
 		return
 	}
@@ -199,10 +203,14 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := http.StatusCreated
 
-	uid := GetUserID(r.Context())
+	userID := GetUserID(r.Context())
 
-	id := u.ShortID(req.URL)
-	err := uh.store.AddURL(req.URL, id, uid)
+	ue := u.URLEntry{
+		ShortURL:    u.ShortID(req.URL),
+		OriginalURL: req.URL,
+	}
+
+	err := uh.store.AddURL(r.Context(), ue, userID)
 
 	if IsConflictError(err) {
 		status = http.StatusConflict
@@ -213,7 +221,7 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	jr, err := json.Marshal(
 		u.URLResponse{
-			Result: fmt.Sprintf("%s/%s", uh.config.BaseURL, id),
+			Result: fmt.Sprintf("%s/%s", uh.config.BaseURL, ue.ShortURL),
 		},
 	)
 

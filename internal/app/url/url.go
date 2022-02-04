@@ -14,7 +14,7 @@ type URLResponse struct {
 	Result string `json:"result"`
 }
 
-type UserURL struct {
+type URLEntry struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -38,29 +39,30 @@ func NewMapStorage() (*MapStorage, error) {
 }
 
 // AddURL saves both url and its id
-func (st *MapStorage) AddURL(url string, id string, uid string) error {
+func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string) error {
 	st.Lock()
 	defer st.Unlock()
-	if uid == "" {
-		uid = "NULL"
+	if userID == "" {
+		userID = "NULL"
 	}
-	if _, ok := st.data[id]; ok {
-		log.Println(">>> MapStorage: Repeated id found: ", id)
-		return NewIDConflictError(id)
+	if _, ok := st.data[ue.ShortURL]; ok {
+		log.Println(">>> MapStorage: Repeated id found: ", ue.ShortURL)
+		return NewIDConflictError(ue.ShortURL)
 	}
-	st.data[id] = uid + ";" + url
+	st.data[ue.ShortURL] = userID + ";" + ue.OriginalURL
 
 	return nil
 }
 
-func (st *MapStorage) AddBatchURL(batch []url.BatchURLEntry, uid string) error {
+func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error {
 	st.Lock()
 	defer st.Unlock()
-	if uid == "" {
-		uid = "NULL"
+	// TODO check if empty string could be used in split at GetURL()
+	if userID == "" {
+		userID = "NULL"
 	}
-	for _, e := range batch {
-		st.data[e.ShortURL] = uid + ";" + e.OriginalURL
+	for _, ue := range batch {
+		st.data[ue.ShortURL] = userID + ";" + ue.OriginalURL
 	}
 
 	return nil
@@ -82,14 +84,14 @@ func (st *MapStorage) GetURL(id string) (string, error) {
 	return parts[1], nil
 }
 
-func (st *MapStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
-	res := []url.UserURL{}
+func (st *MapStorage) GetUserURLs(userID string) ([]url.URLEntry, error) {
+	res := []url.URLEntry{}
 	for id, str := range st.data {
 		parts := strings.SplitN(str, ";", 2)
-		if parts[0] != uid {
+		if parts[0] != userID {
 			continue
 		}
-		entry := url.UserURL{
+		entry := url.URLEntry{
 			ShortURL:    id,
 			OriginalURL: parts[1],
 		}

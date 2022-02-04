@@ -2,10 +2,13 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/sbxb/shorty/internal/app/url"
 )
 
 // FileMapStorage defines a persistent in-memory storage that loads / saves data
@@ -15,6 +18,9 @@ type FileMapStorage struct {
 
 	file *os.File
 }
+
+// TODO ??? use json serialized strings instead of tab separated ones: the current
+// format relies in the order of fields and the parsing rule is not flexible at all
 
 // FileMapStorage implements Storage interface
 var _ Storage = (*FileMapStorage)(nil)
@@ -46,7 +52,12 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 		if len(input) != 3 {
 			continue
 		}
-		st.AddURL(input[2], input[0], input[1])
+		ue := url.URLEntry{
+			ShortURL:    input[0],
+			OriginalURL: input[2],
+		}
+		userID := input[1]
+		st.AddURL(context.Background(), ue, userID)
 	}
 
 	if err := scanner.Err(); err != nil {

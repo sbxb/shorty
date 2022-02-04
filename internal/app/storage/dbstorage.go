@@ -82,20 +82,22 @@ func (st *DBStorage) Truncate() error {
 }
 
 // AddURL saves both url and its id
-func (st *DBStorage) AddURL(url string, id string, uid string) error {
-	if uid == "" {
-		uid = "NULL"
+func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string) error {
+	// FIXME use empty strings
+	if userID == "" {
+		userID = "NULL"
 	}
+	// FIXME use common st field instead of a local var
 	URLsTableName := "urls"
 	AddURLQuery := `INSERT INTO ` + URLsTableName + `(url_id, user_id, original_url) 
 		VALUES($1, $2, $3)`
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
-	result, err := st.db.ExecContext(ctx, AddURLQuery, id, uid, url)
+	result, err := st.db.ExecContext(ctx, AddURLQuery, ue.ShortURL, userID, ue.OriginalURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
-			return NewIDConflictError(id)
+			return NewIDConflictError(ue.ShortURL)
 		}
 		//log.Printf(">>> DBStorage: [%v] [%T]", err, err)
 		return fmt.Errorf("DBStorage: AddURL: %v", err)
@@ -111,12 +113,13 @@ func (st *DBStorage) AddURL(url string, id string, uid string) error {
 	return nil
 }
 
-func (st *DBStorage) AddBatchURL(batch []url.BatchURLEntry, uid string) error {
-	if uid == "" {
-		uid = "NULL"
+func (st *DBStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error {
+	// FIXME use empty strings
+	if userID == "" {
+		userID = "NULL"
 	}
 
-	tx, err := st.db.Begin()
+	tx, err := st.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
 	}
@@ -131,7 +134,7 @@ func (st *DBStorage) AddBatchURL(batch []url.BatchURLEntry, uid string) error {
 	defer stmt.Close()
 
 	for _, e := range batch {
-		if _, err = stmt.Exec(e.ShortURL, uid, e.OriginalURL); err != nil {
+		if _, err = stmt.Exec(e.ShortURL, userID, e.OriginalURL); err != nil {
 			return fmt.Errorf("DBStorage: AddBatchURL: %v", err)
 		}
 	}
@@ -162,8 +165,8 @@ func (st *DBStorage) GetURL(id string) (string, error) {
 	}
 }
 
-func (st *DBStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
-	res := []url.UserURL{}
+func (st *DBStorage) GetUserURLs(userID string) ([]url.URLEntry, error) {
+	res := []url.URLEntry{}
 
 	URLsTableName := "urls"
 	GetUserURLsQuery := `SELECT url_id, original_url FROM ` + URLsTableName + ` WHERE 
@@ -172,14 +175,14 @@ func (st *DBStorage) GetUserURLs(uid string) ([]url.UserURL, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	rows, err := st.db.QueryContext(ctx, GetUserURLsQuery, uid)
+	rows, err := st.db.QueryContext(ctx, GetUserURLsQuery, userID)
 	if err != nil {
 		return nil, fmt.Errorf("DBStorage: GetUserURLs: %v", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var u url.UserURL
+		var u url.URLEntry
 		err = rows.Scan(&u.ShortURL, &u.OriginalURL)
 		if err != nil {
 			return nil, fmt.Errorf("DBStorage: GetUserURLs: %v", err)

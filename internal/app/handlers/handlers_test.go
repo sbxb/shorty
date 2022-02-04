@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -405,7 +406,10 @@ func TestGetHandler_ValidCases(t *testing.T) {
 	router.Get("/{id}", urlHandler.GetHandler)
 
 	for _, tt := range tests {
-		store.AddURL(tt.wantURL, tt.reqURL[strings.LastIndex(tt.reqURL, "/")+1:], "")
+		store.AddURL(context.Background(), u.URLEntry{
+			ShortURL:    tt.reqURL[strings.LastIndex(tt.reqURL, "/")+1:],
+			OriginalURL: tt.wantURL,
+		}, "")
 		t.Run("Get: "+tt.reqURL, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.reqURL, nil)
 			w := httptest.NewRecorder()
