@@ -19,9 +19,6 @@ type FileMapStorage struct {
 	file *os.File
 }
 
-// TODO ??? use json serialized strings instead of tab separated ones: the current
-// format relies on the order of fields and the parsing rule is not flexible at all
-
 // FileMapStorage implements Storage interface
 var _ Storage = (*FileMapStorage)(nil)
 

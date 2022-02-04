@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"math/big"
+	"strings"
 )
 
 type URLRequest struct {
@@ -53,10 +54,31 @@ func IsBatchURLRequestValid(batch []BatchURLRequestEntry) bool {
 		return false
 	}
 	for _, u := range batch {
-		if u.CorrelationID == "" || u.OriginalURL == "" {
+		if u.CorrelationID == "" || !IsValidInputURL(u.OriginalURL) {
 			return false
 		}
 	}
 
+	return true
+}
+
+// IsValidInputURL checks if the user input slightly resembles a valid URL or not
+// by simply detecting non-valid characters
+// There is no need to parse a URL, let the user shorten whatever they want
+// within reasonable limits
+func IsValidInputURL(url string) bool {
+	// characters that URL can possibly contain according to RFC3986
+	allowedChars := `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:/?#[]@!$&'()*+,;=-_.~%`
+
+	// empty or extremely long - not valid
+	if url == "" || len(url) > 2048 {
+		return false
+	}
+
+	for _, c := range url {
+		if !strings.Contains(allowedChars, string(c)) {
+			return false
+		}
+	}
 	return true
 }

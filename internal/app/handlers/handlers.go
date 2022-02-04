@@ -70,8 +70,8 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := string(b)
-	// TODO There should be some kind of URL validation
-	if url == "" {
+
+	if !u.IsValidInputURL(url) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
@@ -163,7 +163,6 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		respBatch[i].ShortURL = uh.config.BaseURL + "/" + respBatch[i].ShortURL
 	}
 
-	//w.Write([]byte(fmt.Sprintf("%+v", respBatch)))
 	jr, err := json.Marshal(respBatch)
 	if err != nil {
 		http.Error(w, "Server failed to process response result", http.StatusInternalServerError)
@@ -196,8 +195,8 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// is request an empty struct
-	if req == (u.URLRequest{}) {
-		http.Error(w, "Bad request: empty object received", http.StatusBadRequest)
+	if req == (u.URLRequest{}) || !u.IsValidInputURL(req.URL) {
+		http.Error(w, "Bad request: non-valid object received", http.StatusBadRequest)
 		return
 	}
 
