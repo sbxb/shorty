@@ -49,7 +49,7 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 		if len(input) != 2 {
 			continue
 		}
-		parts := strings.SplitN(input[1], ";", 2)
+		parts := strings.SplitN(input[1], "|", 2)
 		ue := url.URLEntry{
 			ShortURL:    input[0],
 			OriginalURL: parts[1],
