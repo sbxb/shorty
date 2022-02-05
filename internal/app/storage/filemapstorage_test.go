@@ -42,7 +42,7 @@ func TestFileMapStorage_Write_And_Read_File(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, ue := range entries {
-		urlReturned, _ := store.GetURL(ue.ShortURL) // MapStorage.GetURL() never returns non-nil error
+		urlReturned, _ := store.GetURL(context.Background(), ue.ShortURL) // MapStorage.GetURL() never returns non-nil error
 		assert.Equal(t, urlReturned, ue.OriginalURL)
 	}
 

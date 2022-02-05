@@ -33,7 +33,7 @@ func NewURLHandler(st storage.Storage, cfg config.Config) URLHandler {
 func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	url, err := uh.store.GetURL(id)
+	url, err := uh.store.GetURL(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
 		return
@@ -250,7 +250,7 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	uid := GetUserID(r.Context())
 
-	urls, _ := uh.store.GetUserURLs(uid)
+	urls, _ := uh.store.GetUserURLs(r.Context(), uid)
 
 	if len(urls) == 0 {
 		w.WriteHeader(http.StatusNoContent)

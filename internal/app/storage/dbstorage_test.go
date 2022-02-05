@@ -79,7 +79,7 @@ package storage_test
 // 		err := store.AddURL(context.Background(), ue, "")
 // 		require.NoError(t, err)
 
-// 		urlReturned, err := store.GetURL(ue.ShortURL)
+// 		urlReturned, err := store.GetURL(context.Background(), ue.ShortURL)
 // 		require.NoError(t, err)
 
 // 		assert.Equal(t, urlReturned, ue.OriginalURL)
@@ -93,7 +93,7 @@ package storage_test
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
-// 	urlReturned, err := store.GetURL(id)
+// 	urlReturned, err := store.GetURL(context.Background(), id)
 // 	require.NoError(t, err)
 
 // 	assert.Empty(t, urlReturned)

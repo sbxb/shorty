@@ -54,7 +54,7 @@ func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry
 // Returns url found or an empty string for a nonexistent id (valid url is
 // never an empty string)
 // MapStorage implementation never returns non-nil error
-func (st *MapStorage) GetURL(id string) (string, error) {
+func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 	st.RLock()
 	defer st.RUnlock()
 	res := st.data[id]
@@ -66,7 +66,7 @@ func (st *MapStorage) GetURL(id string) (string, error) {
 	return parts[1], nil
 }
 
-func (st *MapStorage) GetUserURLs(userID string) ([]url.URLEntry, error) {
+func (st *MapStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLEntry, error) {
 	res := []url.URLEntry{}
 	for id, str := range st.data {
 		parts := strings.SplitN(str, "|", 2)

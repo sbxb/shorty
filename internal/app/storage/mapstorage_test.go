@@ -28,7 +28,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 	for _, ue := range entries {
 		err := store.AddURL(context.Background(), ue, "")
 		require.NoError(t, err)
-		urlReturned, _ := store.GetURL(ue.ShortURL) // MapStorage.GetURL() never returns non-nil error
+		urlReturned, _ := store.GetURL(context.Background(), ue.ShortURL) // MapStorage.GetURL() never returns non-nil error
 
 		assert.Equal(t, urlReturned, ue.OriginalURL)
 	}
@@ -39,7 +39,7 @@ func TestMemoryStore_Get_Nonexistent(t *testing.T) {
 
 	store, _ := storage.NewMapStorage() // NewMapStorage() never returns non-nil error
 
-	urlReturned, _ := store.GetURL(id) // MapStorage.GetURL() never returns non-nil error
+	urlReturned, _ := store.GetURL(context.Background(), id) // MapStorage.GetURL() never returns non-nil error
 
 	assert.Empty(t, urlReturned)
 }
