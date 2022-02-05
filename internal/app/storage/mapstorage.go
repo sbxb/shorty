@@ -2,25 +2,12 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 	"sync"
 
 	"github.com/sbxb/shorty/internal/app/url"
 )
-
-type IDConflictError struct {
-	ID string
-}
-
-func (ice *IDConflictError) Error() string {
-	return fmt.Sprintf("Storage already has a record with id %s", ice.ID)
-}
-
-func NewIDConflictError(id string) error {
-	return &IDConflictError{id}
-}
 
 // MapStorage defines a simple in-memory storage implemented as a wrapper
 // around Go map
