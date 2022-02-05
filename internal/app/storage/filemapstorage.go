@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -32,7 +32,7 @@ func NewFileMapStorage(filename string) (*FileMapStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	logger.Info("FileMapStorage opened", f.Name())
 	storage := &FileMapStorage{MapStorage: ms, file: f}
 	if err := storage.LoadRecordsFromFile(); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (st *FileMapStorage) Close() error {
 			st.file.Name(), err)
 	}
 
-	log.Println("MapStorage closing", st.file.Name())
+	logger.Info("FileMapStorage closing", st.file.Name())
 
 	if err := st.file.Close(); err != nil {
 		return err

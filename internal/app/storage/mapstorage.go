@@ -2,10 +2,10 @@ package storage
 
 import (
 	"context"
-	"log"
 	"strings"
 	"sync"
 
+	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -31,7 +31,7 @@ func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string
 	defer st.Unlock()
 
 	if _, ok := st.data[ue.ShortURL]; ok {
-		log.Println(">>> MapStorage: Repeated id found: ", ue.ShortURL)
+		logger.Info("MapStorage: Repeated id found: ", ue.ShortURL)
 		return NewIDConflictError(ue.ShortURL)
 	}
 	st.data[ue.ShortURL] = userID + "|" + ue.OriginalURL
