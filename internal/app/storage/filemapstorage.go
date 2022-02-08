@@ -2,10 +2,13 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/sbxb/shorty/internal/app/logger"
+	"github.com/sbxb/shorty/internal/app/url"
 )
 
 // FileMapStorage defines a persistent in-memory storage that loads / saves data
@@ -29,7 +32,7 @@ func NewFileMapStorage(filename string) (*FileMapStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	logger.Info("FileMapStorage opened", f.Name())
 	storage := &FileMapStorage{MapStorage: ms, file: f}
 	if err := storage.LoadRecordsFromFile(); err != nil {
 		return nil, err
@@ -46,7 +49,13 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 		if len(input) != 2 {
 			continue
 		}
-		st.AddURL(input[1], input[0])
+		parts := strings.SplitN(input[1], "|", 2)
+		ue := url.URLEntry{
+			ShortURL:    input[0],
+			OriginalURL: parts[1],
+		}
+		userID := parts[0]
+		st.AddURL(context.Background(), ue, userID)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -66,7 +75,7 @@ func (st *FileMapStorage) Close() error {
 			st.file.Name(), err)
 	}
 
-	log.Println("MapStorage closing", st.file.Name())
+	logger.Info("FileMapStorage closing", st.file.Name())
 
 	if err := st.file.Close(); err != nil {
 		return err
@@ -90,8 +99,8 @@ func (st *FileMapStorage) SaveRecordsToFile() error {
 
 	var wErr error = nil
 	w := bufio.NewWriter(st.file)
-	for id, url := range st.data {
-		_, wErr = w.WriteString(fmt.Sprintf("%s\t%s\n", id, url))
+	for id, uu := range st.data {
+		_, wErr = w.WriteString(fmt.Sprintf("%s\t%s\n", id, uu))
 		if wErr != nil {
 			break
 		}

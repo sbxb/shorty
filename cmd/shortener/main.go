@@ -2,34 +2,42 @@ package main
 
 import (
 	"context"
-	"log"
 	"os/signal"
 	"sync"
 	"syscall"
 
 	"github.com/sbxb/shorty/internal/app/api"
 	"github.com/sbxb/shorty/internal/app/config"
+	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/storage"
 )
 
 func main() {
 	var wg sync.WaitGroup
 
+	logger.SetLevel("WARNING")
+
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 
-	store, err := storage.NewFileMapStorage(cfg.FileStoragePath)
+	var store storage.Storage
+
+	if cfg.DatabaseDSN != "" {
+		store, err = storage.NewDBStorage(cfg.DatabaseDSN)
+	} else {
+		store, err = storage.NewFileMapStorage(cfg.FileStoragePath)
+	}
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	defer store.Close()
 
 	router := api.NewRouter(store, cfg)
 	server, err := api.NewHTTPServer(cfg.ServerAddress, router)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatalln(err)
 	}
 	defer server.Close()
 
@@ -46,6 +54,6 @@ func main() {
 
 	wg.Wait()
 	if err := store.Close(); err != nil {
-		log.Fatalln(err)
+		logger.Error(err)
 	}
 }

@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/sbxb/shorty/internal/app/logger"
 )
 
 type HTTPServer struct {
@@ -37,14 +38,14 @@ func (s *HTTPServer) Close() {
 	if s.srv == nil {
 		return
 	}
-	log.Println("Trying to gracefully stop HTTPServer")
+	logger.Info("Trying to gracefully stop HTTPServer")
 	// Perform server shutdown with a default maximum timeout of 3 seconds
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
 
 	if err := s.srv.Shutdown(timeoutCtx); err != nil {
 		// Error from closing listeners, or context timeout:
-		log.Printf("HTTPServer Shutdown() failed: %v", err)
+		logger.Errorf("HTTPServer Shutdown() failed: %v", err)
 	}
 
 	s.srv = nil
@@ -63,10 +64,10 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	}()
 
 	if err := s.srv.ListenAndServe(); err != http.ErrServerClosed {
-		log.Printf("HTTPServer ListenAndServe() failed: %v", err)
+		logger.Errorf("HTTPServer ListenAndServe() failed: %v", err)
 		return
 	}
 
 	<-s.idleConnsClosed
-	log.Println("HTTPServer gracefully stopped")
+	logger.Info("HTTPServer gracefully stopped")
 }

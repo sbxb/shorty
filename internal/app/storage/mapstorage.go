@@ -1,11 +1,16 @@
 package storage
 
 import (
+	"context"
+	"strings"
 	"sync"
+
+	"github.com/sbxb/shorty/internal/app/logger"
+	"github.com/sbxb/shorty/internal/app/url"
 )
 
 // MapStorage defines a simple in-memory storage implemented as a wrapper
-// aroung Go map
+// around Go map
 type MapStorage struct {
 	sync.RWMutex
 
@@ -21,12 +26,26 @@ func NewMapStorage() (*MapStorage, error) {
 }
 
 // AddURL saves both url and its id
-// MapStorage implementation never returns non-nil error
-func (st *MapStorage) AddURL(url string, id string) error {
+func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string) error {
 	st.Lock()
 	defer st.Unlock()
 
-	st.data[id] = url
+	if _, ok := st.data[ue.ShortURL]; ok {
+		logger.Info("MapStorage: Repeated id found: ", ue.ShortURL)
+		return NewIDConflictError(ue.ShortURL)
+	}
+	st.data[ue.ShortURL] = userID + "|" + ue.OriginalURL
+
+	return nil
+}
+
+func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error {
+	st.Lock()
+	defer st.Unlock()
+
+	for _, ue := range batch {
+		st.data[ue.ShortURL] = userID + "|" + ue.OriginalURL
+	}
 
 	return nil
 }
@@ -35,12 +54,32 @@ func (st *MapStorage) AddURL(url string, id string) error {
 // Returns url found or an empty string for a nonexistent id (valid url is
 // never an empty string)
 // MapStorage implementation never returns non-nil error
-func (st *MapStorage) GetURL(id string) (string, error) {
+func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 	st.RLock()
 	defer st.RUnlock()
-	url := st.data[id]
+	res := st.data[id]
+	if res == "" {
+		return res, nil
+	}
+	parts := strings.SplitN(res, "|", 2)
 
-	return url, nil
+	return parts[1], nil
+}
+
+func (st *MapStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLEntry, error) {
+	res := []url.URLEntry{}
+	for id, str := range st.data {
+		parts := strings.SplitN(str, "|", 2)
+		if parts[0] != userID {
+			continue
+		}
+		entry := url.URLEntry{
+			ShortURL:    id,
+			OriginalURL: parts[1],
+		}
+		res = append(res, entry)
+	}
+	return res, nil
 }
 
 func (st *MapStorage) Close() error {
