@@ -234,6 +234,21 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jr)
 }
 
+// UserDeleteHandler process DELETE /api/user/urls request
+// ... асинхронный хендлер DELETE /api/user/urls, который принимает список
+// идентификаторов сокращённых URL для удаления в формате:
+// [ "a", "b", "c", "d", ...]
+// В случае успешного приёма запроса хендлер должен возвращать HTTP-статус
+// 202 Accepted. Фактический результат удаления может происходить позже -
+// каким-либо образом оповещать пользователя об успешности или
+// неуспешности не нужно.
+// Успешно удалить URL может пользователь, его создавший.
+// При запросе удалённого URL с помощью хендлера GET /{id} нужно вернуть
+// статус 410 Gone.
+func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+}
+
 // UserGetHandler process GET /user/urls request
 // ... хендлер GET /user/urls, который сможет вернуть пользователю все
 // когда-либо сокращённые им URL в формате:
