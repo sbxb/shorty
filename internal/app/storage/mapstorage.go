@@ -34,7 +34,8 @@ func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string
 		logger.Info("MapStorage: Repeated id found: ", ue.ShortURL)
 		return NewIDConflictError(ue.ShortURL)
 	}
-	st.data[ue.ShortURL] = userID + "|" + ue.OriginalURL
+	st.data[ue.ShortURL] = userID + "|false|" + ue.OriginalURL
+	logger.Debugf("AddURL [%s] :: [%s]", ue.ShortURL, st.data[ue.ShortURL])
 
 	return nil
 }
@@ -44,7 +45,7 @@ func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry
 	defer st.Unlock()
 
 	for _, ue := range batch {
-		st.data[ue.ShortURL] = userID + "|" + ue.OriginalURL
+		st.data[ue.ShortURL] = userID + "|false|" + ue.OriginalURL
 	}
 
 	return nil
@@ -61,25 +62,29 @@ func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 	if res == "" {
 		return res, nil
 	}
-	parts := strings.SplitN(res, "|", 2)
+	parts := strings.SplitN(res, "|", 3)
 
-	return parts[1], nil
+	return parts[2], nil
 }
 
 func (st *MapStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLEntry, error) {
 	res := []url.URLEntry{}
 	for id, str := range st.data {
-		parts := strings.SplitN(str, "|", 2)
+		parts := strings.SplitN(str, "|", 3)
 		if parts[0] != userID {
 			continue
 		}
 		entry := url.URLEntry{
 			ShortURL:    id,
-			OriginalURL: parts[1],
+			OriginalURL: parts[2],
 		}
 		res = append(res, entry)
 	}
 	return res, nil
+}
+
+func (st *MapStorage) DeleteBatch(ctx context.Context, ids []string, userID string) error {
+	return nil
 }
 
 func (st *MapStorage) Close() error {

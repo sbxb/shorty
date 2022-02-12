@@ -12,5 +12,6 @@ type Storage interface {
 	AddBatchURL(ctx context.Context, batch []url.BatchURLEntry, userID string) error
 	GetURL(ctx context.Context, id string) (string, error)
 	GetUserURLs(ctx context.Context, userID string) ([]url.URLEntry, error)
+	DeleteBatch(ctx context.Context, ids []string, userID string) error
 	Close() error
 }
