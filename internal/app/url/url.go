@@ -33,6 +33,8 @@ type BatchURLEntry struct {
 	ShortURL      string `json:"short_url"`
 }
 
+//type DeleteList []string
+
 // ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number
 // MD5 is OK since we do not care about any (almost impossible) collisions
