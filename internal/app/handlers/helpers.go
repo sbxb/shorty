@@ -23,3 +23,9 @@ func IsConflictError(err error) bool {
 
 	return errors.As(err, &conflictError)
 }
+
+func IsDeletedError(err error) bool {
+	var deletedError *storage.URLDeletedError
+
+	return errors.As(err, &deletedError)
+}

@@ -35,7 +35,11 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 	url, err := uh.store.GetURL(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
+		if IsDeletedError(err) {
+			http.Error(w, "Record deleted", http.StatusGone)
+		} else {
+			http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
+		}
 		return
 	}
 	if url == "" {
@@ -246,7 +250,18 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 // При запросе удалённого URL с помощью хендлера GET /{id} нужно вернуть
 // статус 410 Gone.
 func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var deleteIDs []string
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&deleteIDs); err != nil {
+		http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(fmt.Sprintf(">>> %#v", deleteIDs)))
 }
 
 // UserGetHandler process GET /user/urls request

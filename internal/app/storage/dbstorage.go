@@ -59,6 +59,7 @@ func createTables(db *sql.DB, urlTable string) error {
 		id INT primary key GENERATED ALWAYS AS IDENTITY,
 		url_id VARCHAR(512) NOT NULL,
 		user_id VARCHAR(512) NOT NULL,
+		deleted BOOLEAN NOT NULL DEFAULT false,
 		original_url TEXT NOT NULL,
 		UNIQUE (url_id)
 	)`
@@ -131,12 +132,15 @@ func (st *DBStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry,
 // never an empty string)
 func (st *DBStorage) GetURL(ctx context.Context, id string) (string, error) {
 	var url string
+	var deleted bool
 
-	GetURLQuery := `SELECT original_url FROM ` + st.urlTable + ` WHERE 
+	GetURLQuery := `SELECT original_url, deleted FROM ` + st.urlTable + ` WHERE 
 		url_id=$1`
-	err := st.db.QueryRowContext(ctx, GetURLQuery, id).Scan(&url)
+	err := st.db.QueryRowContext(ctx, GetURLQuery, id).Scan(&url, &deleted)
 
 	switch {
+	case deleted:
+		return "", NewURLDeletedError(id)
 	case err == sql.ErrNoRows:
 		return "", nil
 	case err != nil:
@@ -174,6 +178,10 @@ func (st *DBStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLE
 	}
 
 	return res, nil
+}
+
+func (st *DBStorage) DeleteBatch(ctx context.Context, ids []string, userID string) error {
+	return nil
 }
 
 // Ping pings the database

@@ -54,7 +54,8 @@ func (st *MapStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry
 // GetURL searches for url by its id
 // Returns url found or an empty string for a nonexistent id (valid url is
 // never an empty string)
-// MapStorage implementation never returns non-nil error
+// MapStorage implementation never returns non-nil error (except for records
+// marked as deleted)
 func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 	st.RLock()
 	defer st.RUnlock()
@@ -63,6 +64,10 @@ func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 		return res, nil
 	}
 	parts := strings.SplitN(res, "|", 3)
+	if parts[1] == "true" {
+		logger.Info("MapStorage: Deleted id found: ", id)
+		return "", NewURLDeletedError(id)
+	}
 
 	return parts[2], nil
 }
