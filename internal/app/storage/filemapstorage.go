@@ -49,10 +49,10 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 		if len(input) != 2 {
 			continue
 		}
-		parts := strings.SplitN(input[1], "|", 2)
+		parts := strings.SplitN(input[1], "|", 3)
 		ue := url.URLEntry{
 			ShortURL:    input[0],
-			OriginalURL: parts[1],
+			OriginalURL: parts[2],
 		}
 		userID := parts[0]
 		st.AddURL(context.Background(), ue, userID)
