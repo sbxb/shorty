@@ -181,7 +181,26 @@ func (st *DBStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLE
 }
 
 func (st *DBStorage) DeleteBatch(ctx context.Context, ids []string, userID string) error {
-	return nil
+	tx, err := st.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`UPDATE ` + st.urlTable + ` SET deleted=true
+		WHERE url_id=$1 AND user_id=$2 AND deleted=false`)
+	if err != nil {
+		return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+	}
+	defer stmt.Close()
+
+	for _, id := range ids {
+		if _, err = stmt.Exec(id, userID); err != nil {
+			return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+		}
+	}
+
+	return tx.Commit()
 }
 
 // Ping pings the database

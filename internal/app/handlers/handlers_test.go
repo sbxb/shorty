@@ -36,6 +36,62 @@ var _ = func() bool {
 	return true
 }()
 
+func TestUserDeleteHandler_NotValidCases(t *testing.T) {
+	wantCode := 400
+	tests := []struct {
+		body string
+	}{
+		{""},
+		{" "},
+		{"abc"},
+		{"{}"},
+		{`{"key": "value"}`},
+		{`[`},
+		{`[]`},
+	}
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Delete("/api/user/urls", urlHandler.UserDeleteHandler)
+
+	for _, tt := range tests {
+		t.Run("Post", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, cfg.BaseURL+"/api/user/urls", strings.NewReader(tt.body))
+			//req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			assert.Equal(t, resp.StatusCode, wantCode)
+		})
+	}
+}
+
+func TestUserDeleteHandler_ValidCase(t *testing.T) {
+	wantCode := 202
+	sendBody := `[ "a", "b", "c", "d" ]`
+
+	store, _ := storage.NewMapStorage()
+
+	router := chi.NewRouter()
+	urlHandler := handlers.NewURLHandler(store, cfg)
+	router.Delete("/api/user/urls", urlHandler.UserDeleteHandler)
+
+	req := httptest.NewRequest(http.MethodDelete, cfg.BaseURL+"/api/user/urls", strings.NewReader(sendBody))
+	//req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	assert.Equal(t, resp.StatusCode, wantCode)
+
+}
+
 func TestJSONBatchPostHandler_NotValidCases(t *testing.T) {
 	wantCode := 400
 	tests := []struct {
