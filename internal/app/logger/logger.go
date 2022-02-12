@@ -26,7 +26,7 @@ const (
 
 var (
 	std            = myLogger{l: log.New(os.Stderr, "", log.LstdFlags)}
-	level logLevel = WARNING
+	level logLevel = DEBUG
 )
 
 var levelNames = []string{
@@ -63,6 +63,18 @@ func SetLevel(levelName string) {
 
 func Fatalln(args ...interface{}) {
 	std.l.Fatalln(args...)
+}
+
+func Debug(args ...interface{}) {
+	if level <= DEBUG && level != NONE {
+		println(DEBUG, args...)
+	}
+}
+
+func Debugf(format string, args ...interface{}) {
+	if level <= DEBUG && level != NONE {
+		printf(DEBUG, format, args...)
+	}
 }
 
 func Info(args ...interface{}) {
