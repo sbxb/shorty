@@ -29,3 +29,10 @@ func IsDeletedError(err error) bool {
 
 	return errors.As(err, &deletedError)
 }
+
+func DeleteBatch(ctx context.Context, store storage.Storage, ids []string, userID string) {
+	err := store.DeleteBatch(ctx, ids, userID)
+	if err != nil {
+		logger.Warningf("DeleteBatch failed: %v", err)
+	}
+}

@@ -260,8 +260,17 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(deleteIDs) == 0 {
+		http.Error(w, "Bad request: no ids provided", http.StatusBadRequest)
+		return
+	}
+
+	userID := GetUserID(r.Context())
+
+	go DeleteBatch(r.Context(), uh.store, deleteIDs, userID)
+
 	w.WriteHeader(http.StatusAccepted)
-	w.Write([]byte(fmt.Sprintf(">>> %#v", deleteIDs)))
+	//w.Write([]byte(fmt.Sprintf("%+v", deleteIDs)))
 }
 
 // UserGetHandler process GET /user/urls request
@@ -278,9 +287,9 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 
-	uid := GetUserID(r.Context())
+	userID := GetUserID(r.Context())
 
-	urls, _ := uh.store.GetUserURLs(r.Context(), uid)
+	urls, _ := uh.store.GetUserURLs(r.Context(), userID)
 
 	if len(urls) == 0 {
 		w.WriteHeader(http.StatusNoContent)

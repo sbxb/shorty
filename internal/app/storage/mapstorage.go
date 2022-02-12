@@ -89,6 +89,27 @@ func (st *MapStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URL
 }
 
 func (st *MapStorage) DeleteBatch(ctx context.Context, ids []string, userID string) error {
+	logger.Debugf("MapStorage : DeleteBatch: Got ids %v", ids)
+	st.Lock()
+	defer st.Unlock()
+
+	idHash := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		idHash[id] = struct{}{}
+	}
+
+	for id, str := range st.data {
+		if _, ok := idHash[id]; !ok {
+			continue
+		}
+		parts := strings.SplitN(str, "|", 3)
+		if parts[0] != userID || parts[1] != "false" {
+			logger.Debugf("MapStorage : DeleteBatch: skip id %s", id)
+			continue
+		}
+		st.data[id] = parts[0] + "|true|" + parts[2]
+		logger.Debugf("MapStorage : DeleteBatch: id %s marked deleted", id)
+	}
 	return nil
 }
 
