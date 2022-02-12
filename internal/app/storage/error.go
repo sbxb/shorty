@@ -25,5 +25,5 @@ func (ude *URLDeletedError) Error() string {
 }
 
 func NewURLDeletedError(id string) error {
-	return &IDConflictError{id}
+	return &URLDeletedError{id}
 }
