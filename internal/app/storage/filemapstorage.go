@@ -2,7 +2,6 @@ package storage
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -55,7 +54,10 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 			OriginalURL: parts[2],
 		}
 		userID := parts[0]
-		st.AddURL(context.Background(), ue, userID)
+
+		st.data[ue.ShortURL] = userID + "|" + parts[1] + "|" + ue.OriginalURL
+		logger.Debugf("Loaded from file ==> [%s] :: [%s]", ue.ShortURL, st.data[ue.ShortURL])
+		//st.AddURL(context.Background(), ue, userID)
 	}
 
 	if err := scanner.Err(); err != nil {
