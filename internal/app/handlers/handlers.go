@@ -271,13 +271,17 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if uh.config.DatabaseDSN == "" {
+			// Either MapStorage or FileMapStorage is used (for testing
+			// purposes only), delete batch straightforward since neither
+			// storage can really benefit from concurrency due to heavy
+			// locking and fullscan
 			err := uh.store.DeleteBatch(context.Background(), deleteIDs, userID)
 			if err != nil {
 				logger.Warningf("UserDeleteHandler : DeleteBatch failed: %v", err)
 			}
 		} else {
-			// Real DB is used, should make it fast and concurrent
-			FastDeleteBatch(context.Background(), uh.store, deleteIDs, userID)
+			// Real Database is used, increment 14 requires some concurrency here
+			ConcurrentDeleteBatch(uh.store, deleteIDs, userID)
 		}
 	}()
 
