@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/config"
+	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/storage"
 	u "github.com/sbxb/shorty/internal/app/url"
 )
@@ -267,7 +269,17 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID := GetUserID(r.Context())
 
-	go DeleteBatch(r.Context(), uh.store, deleteIDs, userID)
+	go func() {
+		if uh.config.DatabaseDSN == "" {
+			err := uh.store.DeleteBatch(context.Background(), deleteIDs, userID)
+			if err != nil {
+				logger.Warningf("UserDeleteHandler : DeleteBatch failed: %v", err)
+			}
+		} else {
+			// Real DB is used, should make it fast and concurrent
+			FastDeleteBatch(context.Background(), uh.store, deleteIDs, userID)
+		}
+	}()
 
 	w.WriteHeader(http.StatusAccepted)
 	//w.Write([]byte(fmt.Sprintf("%+v", deleteIDs)))
