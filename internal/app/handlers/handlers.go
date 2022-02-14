@@ -272,8 +272,8 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		if uh.config.DatabaseDSN == "" {
 			// Either MapStorage or FileMapStorage is used (for testing
-			// purposes only), delete batch straightforward since neither
-			// storage can really benefit from concurrency due to heavy
+			// purposes only), delete batch straightforward since map-based
+			// storage can not really benefit from concurrency due to heavy
 			// locking and fullscan
 			err := uh.store.DeleteBatch(context.Background(), deleteIDs, userID)
 			if err != nil {
@@ -286,7 +286,6 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	w.WriteHeader(http.StatusAccepted)
-	//w.Write([]byte(fmt.Sprintf("%+v", deleteIDs)))
 }
 
 // UserGetHandler process GET /user/urls request
