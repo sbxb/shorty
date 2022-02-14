@@ -20,7 +20,7 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
+func gzipMW(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			next.ServeHTTP(w, r)
@@ -50,7 +50,7 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
+func authMW(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("user_id")
 		uid := ""
