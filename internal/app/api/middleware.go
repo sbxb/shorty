@@ -27,6 +27,16 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer gz.Close()
+			r.Body = gz
+		}
+
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
 		if err != nil {
 			io.WriteString(w, err.Error())
