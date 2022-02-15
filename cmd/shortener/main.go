@@ -17,7 +17,7 @@ import (
 func main() {
 	var wg sync.WaitGroup
 
-	logger.SetLevel("DEBUG")
+	logger.SetLevel("WARNING")
 
 	cfg, err := config.New()
 	if err != nil {

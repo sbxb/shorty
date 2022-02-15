@@ -2,7 +2,7 @@ package storage
 
 import "fmt"
 
-// Record already exists in storage
+// IDConflictError represents "Record already exists" error
 type IDConflictError struct {
 	ID string
 }
@@ -15,7 +15,7 @@ func NewIDConflictError(id string) error {
 	return &IDConflictError{id}
 }
 
-// Record marked as deleted in storage
+// URLDeletedError represents "Record marked as deleted" error
 type URLDeletedError struct {
 	ID string
 }

@@ -26,7 +26,7 @@ const (
 
 var (
 	std            = myLogger{l: log.New(os.Stderr, "", log.LstdFlags)}
-	level logLevel = DEBUG
+	level logLevel = WARNING
 )
 
 var levelNames = []string{

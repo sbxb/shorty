@@ -25,15 +25,11 @@ type BatchURLRequestEntry struct {
 	OriginalURL   string `json:"original_url"`
 }
 
-//type BatchURLResponse []BatchURLResponseEntry
-
 type BatchURLEntry struct {
 	CorrelationID string `json:"correlation_id"`
 	OriginalURL   string `json:"-"`
 	ShortURL      string `json:"short_url"`
 }
-
-//type DeleteList []string
 
 // ShortID converts URL to a string containing its MD5 hash represented
 // as a base62 number

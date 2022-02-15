@@ -30,6 +30,10 @@ func IsDeletedError(err error) bool {
 	return errors.As(err, &deletedError)
 }
 
+// ConcurrentDeleteBatch takes a slice of ids to be deleted, process the
+// slice chunk by chunk starting several (this number is limited by
+// concurrentWorkers constant) concurrent workers that call Storage.DeleteBatch()
+// Errors are logged and ignored
 func ConcurrentDeleteBatch(store storage.Storage, ids []string, userID string) {
 	const batchSize = 50        // 1-5 for debug, 50-100+ for testing/production
 	const concurrentWorkers = 3 // 2-4 concurrent workers should be enough
@@ -48,7 +52,6 @@ func ConcurrentDeleteBatch(store storage.Storage, ids []string, userID string) {
 		logger.Debugf("Got permission to process: [%d - %d)", beg, end)
 
 		go func(ids []string) {
-			//logger.Debugf("%#v", ids)
 			//time.Sleep(3 * time.Second) // makes debug easier
 			err := store.DeleteBatch(context.Background(), ids, userID)
 			if err != nil {

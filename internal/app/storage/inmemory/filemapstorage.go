@@ -58,7 +58,6 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 
 		st.data[ue.ShortURL] = userID + "|" + parts[1] + "|" + ue.OriginalURL
 		logger.Debugf("Loaded from file ==> [%s] :: [%s]", ue.ShortURL, st.data[ue.ShortURL])
-		//st.AddURL(context.Background(), ue, userID)
 	}
 
 	if err := scanner.Err(); err != nil {
