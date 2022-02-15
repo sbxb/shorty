@@ -111,12 +111,8 @@ func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 // ]
 func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
-	batch := []u.BatchURLRequestEntry{}
 
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
+	batch := []u.BatchURLRequestEntry{}
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -145,12 +141,10 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		respBatch = append(respBatch, ne)
 	}
 
-	// Storage staff starts here
 	if err := uh.store.AddBatchURL(r.Context(), respBatch, userID); err != nil {
 		http.Error(w, "Server failed to store URL(s)", http.StatusInternalServerError)
 		return
 	}
-	// Storage stuff stops here
 
 	for i := range respBatch {
 		respBatch[i].ShortURL = uh.config.BaseURL + "/" + respBatch[i].ShortURL
@@ -172,12 +166,8 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 // {"url": "<some_url>"} и возвращающий в ответ объект {"result": "<shorten_url>"}
 func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
-	var req u.URLRequest
 
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
+	var req u.URLRequest
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()

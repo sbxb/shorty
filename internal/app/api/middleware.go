@@ -73,3 +73,15 @@ func authMW(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func jsonEncMW(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const ContentType = "application/json"
+
+		if strings.ToLower(r.Header.Get("Content-Type")) != ContentType {
+			http.Error(w, "Content-Type should be "+ContentType, http.StatusUnsupportedMediaType)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
