@@ -23,7 +23,7 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 	router.Post("/api/shorten", gzipMW(jsonEncMW(authMW(urlHandler.JSONPostHandler))))
 	router.Post("/api/shorten/batch", gzipMW(jsonEncMW(authMW(urlHandler.JSONBatchPostHandler))))
 
-	router.Delete("/api/user/urls", gzipMW(jsonEncMW(authMW(urlHandler.UserDeleteHandler))))
+	router.Delete("/api/user/urls", gzipMW(authMW(urlHandler.UserDeleteHandler)))
 
 	router.Get("/user/urls", gzipMW(authMW(urlHandler.UserGetHandler)))
 
