@@ -25,7 +25,7 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 
 	router.Delete("/api/user/urls", gzipMW(authMW(urlHandler.UserDeleteHandler)))
 
-	router.Get("/user/urls", gzipMW(authMW(urlHandler.UserGetHandler)))
+	router.Get("/api/user/urls", gzipMW(authMW(urlHandler.UserGetHandler)))
 
 	router.Get("/ping", gzipMW(urlHandler.PingGetHandler)) // no auth cookie needed
 

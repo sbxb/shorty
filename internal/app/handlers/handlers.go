@@ -276,7 +276,7 @@ func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserGetHandler process GET /user/urls request
-// ... хендлер GET /user/urls, который сможет вернуть пользователю все
+// ... хендлер GET /api/user/urls, который сможет вернуть пользователю все
 // когда-либо сокращённые им URL в формате:
 // [
 //     {
