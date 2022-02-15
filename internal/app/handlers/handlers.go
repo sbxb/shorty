@@ -141,12 +141,10 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		respBatch = append(respBatch, ne)
 	}
 
-	// Storage staff starts here
 	if err := uh.store.AddBatchURL(r.Context(), respBatch, userID); err != nil {
 		http.Error(w, "Server failed to store URL(s)", http.StatusInternalServerError)
 		return
 	}
-	// Storage stuff stops here
 
 	for i := range respBatch {
 		respBatch[i].ShortURL = uh.config.BaseURL + "/" + respBatch[i].ShortURL

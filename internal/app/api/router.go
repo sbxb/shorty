@@ -23,10 +23,10 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 	router.Get("/{id}", urlHandler.GetHandler)
 	router.Post("/", urlHandler.PostHandler)
 
-	router.Post("/api/shorten", urlHandler.JSONPostHandler)
-	router.Post("/api/shorten/batch", jsonEncMW(urlHandler.JSONBatchPostHandler))
+	router.With(jsonEncMW).Post("/api/shorten", urlHandler.JSONPostHandler)
+	router.With(jsonEncMW).Post("/api/shorten/batch", urlHandler.JSONBatchPostHandler)
 
-	router.Delete("/api/user/urls", jsonEncMW(urlHandler.UserDeleteHandler))
+	router.With(jsonEncMW).Delete("/api/user/urls", urlHandler.UserDeleteHandler)
 
 	router.Get("/api/user/urls", urlHandler.UserGetHandler)
 

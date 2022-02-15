@@ -74,7 +74,7 @@ func authMW(next http.Handler) http.Handler {
 	})
 }
 
-func jsonEncMW(next http.HandlerFunc) http.HandlerFunc {
+func jsonEncMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const ContentType = "application/json"
 
