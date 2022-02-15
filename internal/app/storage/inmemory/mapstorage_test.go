@@ -1,10 +1,11 @@
-package storage_test
+package inmemory_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/inmemory"
 	"github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage() // NewMapStorage() never returns non-nil error
+	store, _ := inmemory.NewMapStorage() // NewMapStorage() never returns non-nil error
 
 	for _, ue := range entries {
 		err := store.AddURL(context.Background(), ue, "")
@@ -38,7 +39,7 @@ func TestMemoryStore_Add_then_Get(t *testing.T) {
 func TestMemoryStore_Get_Nonexistent(t *testing.T) {
 	id := "nonexistent_id"
 
-	store, _ := storage.NewMapStorage() // NewMapStorage() never returns non-nil error
+	store, _ := inmemory.NewMapStorage() // NewMapStorage() never returns non-nil error
 
 	urlReturned, err := store.GetURL(context.Background(), id)
 	require.NoError(t, err)
@@ -52,7 +53,7 @@ func TestMemoryStore_Add_Record_Twice(t *testing.T) {
 		OriginalURL: "http://example.com",
 	}
 
-	store, _ := storage.NewMapStorage() // NewMapStorage() never returns non-nil error
+	store, _ := inmemory.NewMapStorage() // NewMapStorage() never returns non-nil error
 
 	ctx := context.Background()
 	_ = store.AddURL(ctx, ue, "")    // once
@@ -74,7 +75,7 @@ func TestMemoryStore_Batch_Add_Delete(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage() // NewMapStorage() never returns non-nil error
+	store, _ := inmemory.NewMapStorage() // NewMapStorage() never returns non-nil error
 
 	err := store.AddBatchURL(context.Background(), entries, "")
 	require.NoError(t, err)

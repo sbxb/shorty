@@ -1,4 +1,4 @@
-package storage
+package psql
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sbxb/shorty/internal/app/storage"
 	"github.com/sbxb/shorty/internal/app/url"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -20,7 +21,7 @@ type DBStorage struct {
 }
 
 // DBStorage implements Storage interface
-var _ Storage = (*DBStorage)(nil)
+var _ storage.Storage = (*DBStorage)(nil)
 
 // if it takes more than 2 seconds to ping the database, then database
 // is considered unavailable
@@ -89,7 +90,7 @@ func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string)
 	result, err := st.db.ExecContext(ctx, AddURLQuery, ue.ShortURL, userID, ue.OriginalURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
-			return NewIDConflictError(ue.ShortURL)
+			return storage.NewIDConflictError(ue.ShortURL)
 		}
 		return fmt.Errorf("DBStorage: AddURL: %v", err)
 	}
@@ -140,7 +141,7 @@ func (st *DBStorage) GetURL(ctx context.Context, id string) (string, error) {
 
 	switch {
 	case deleted:
-		return "", NewURLDeletedError(id)
+		return "", storage.NewURLDeletedError(id)
 	case err == sql.ErrNoRows:
 		return "", nil
 	case err != nil:

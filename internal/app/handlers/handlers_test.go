@@ -13,7 +13,7 @@ import (
 
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/handlers"
-	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/inmemory"
 	u "github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/go-chi/chi/v5"
@@ -49,7 +49,7 @@ func TestUserDeleteHandler_NotValidCases(t *testing.T) {
 		{`[`},
 		{`[]`},
 	}
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -74,7 +74,7 @@ func TestUserDeleteHandler_ValidCase(t *testing.T) {
 	wantCode := 202
 	sendBody := `[ "a", "b", "c", "d" ]`
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -112,7 +112,7 @@ func TestJSONBatchPostHandler_NotValidCases(t *testing.T) {
 		{`[{"correlation_id": "", "original_url": "http://example.com"}]`}, // empty field
 		//{`[{"correlation_id": "123", "original_url": "http://example.com"}]`}, // valid, commented only
 	}
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -161,7 +161,7 @@ func TestJSONBatchPostHandler_ValidCases(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -205,7 +205,7 @@ func TestJSONPostHandler_ValidCases(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -240,7 +240,7 @@ func TestJSONPostHandler_InputRepeated(t *testing.T) {
 	requestObj := u.URLRequest{URL: "http://example.com"}
 	wantResponseObj := u.URLResponse{Result: cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3"}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -287,7 +287,7 @@ func TestJSONPostHandler_NotValidCases(t *testing.T) {
 		{`{"url": ""}`}, // empty url
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -315,7 +315,7 @@ func TestPostHandler_NotValidCases(t *testing.T) {
 		{url: ""},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -351,7 +351,7 @@ func TestPostHandler_ValidCases(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -381,7 +381,7 @@ func TestPostHandler_InputRepeated(t *testing.T) {
 	url := "http://example.com"
 	want := cfg.BaseURL + "/5agFZWrIb6Ej21QvYUNBL3"
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -418,7 +418,7 @@ func TestGetHandler_NotValidCases(t *testing.T) {
 		{id: "NON_EXISTING_ID"},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)
@@ -455,7 +455,7 @@ func TestGetHandler_ValidCases(t *testing.T) {
 		},
 	}
 
-	store, _ := storage.NewMapStorage()
+	store, _ := inmemory.NewMapStorage()
 
 	router := chi.NewRouter()
 	urlHandler := handlers.NewURLHandler(store, cfg)

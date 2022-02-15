@@ -1,4 +1,4 @@
-package storage
+package inmemory
 
 import (
 	"bufio"
@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sbxb/shorty/internal/app/logger"
+	"github.com/sbxb/shorty/internal/app/storage"
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -19,7 +20,7 @@ type FileMapStorage struct {
 }
 
 // FileMapStorage implements Storage interface
-var _ Storage = (*FileMapStorage)(nil)
+var _ storage.Storage = (*FileMapStorage)(nil)
 
 func NewFileMapStorage(filename string) (*FileMapStorage, error) {
 	ms, _ := NewMapStorage()

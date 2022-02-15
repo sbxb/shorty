@@ -1,4 +1,4 @@
-package storage
+package inmemory
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sbxb/shorty/internal/app/logger"
+	"github.com/sbxb/shorty/internal/app/storage"
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -18,7 +19,7 @@ type MapStorage struct {
 }
 
 // MapStorage implements Storage interface
-var _ Storage = (*MapStorage)(nil)
+var _ storage.Storage = (*MapStorage)(nil)
 
 func NewMapStorage() (*MapStorage, error) {
 	d := make(map[string]string)
@@ -32,7 +33,7 @@ func (st *MapStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string
 
 	if _, ok := st.data[ue.ShortURL]; ok {
 		logger.Info("MapStorage: Repeated id found: ", ue.ShortURL)
-		return NewIDConflictError(ue.ShortURL)
+		return storage.NewIDConflictError(ue.ShortURL)
 	}
 	st.data[ue.ShortURL] = userID + "|false|" + ue.OriginalURL
 	logger.Debugf("AddURL [%s] :: [%s]", ue.ShortURL, st.data[ue.ShortURL])
@@ -66,7 +67,7 @@ func (st *MapStorage) GetURL(ctx context.Context, id string) (string, error) {
 	parts := strings.SplitN(res, "|", 3)
 	if parts[1] == "true" {
 		logger.Info("MapStorage: Deleted id found: ", id)
-		return "", NewURLDeletedError(id)
+		return "", storage.NewURLDeletedError(id)
 	}
 
 	return parts[2], nil

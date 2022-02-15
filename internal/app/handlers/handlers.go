@@ -11,6 +11,7 @@ import (
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/psql"
 	u "github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -307,7 +308,7 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 // данных. При успешной проверке хендлер должен вернуть HTTP-статус 200 OK,
 // при неуспешной — 500 Internal Server Error ...
 func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
-	dbStore, ok := uh.store.(*storage.DBStorage)
+	dbStore, ok := uh.store.(*psql.DBStorage)
 	if !ok {
 		http.Error(w, "Server failed to open DB", http.StatusInternalServerError)
 		return
