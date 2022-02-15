@@ -113,11 +113,6 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 	const ContentType = "application/json"
 	batch := []u.BatchURLRequestEntry{}
 
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
-
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
@@ -173,11 +168,6 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 	var req u.URLRequest
-
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
