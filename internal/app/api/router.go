@@ -17,17 +17,20 @@ func NewRouter(store storage.Storage, cfg config.Config) http.Handler {
 
 	urlHandler := handlers.NewURLHandler(store, cfg)
 
-	router.Get("/{id}", gzipMW(authMW(urlHandler.GetHandler)))
-	router.Post("/", gzipMW(authMW(urlHandler.PostHandler)))
+	router.Use(gzipMW)
+	router.Use(authMW)
 
-	router.Post("/api/shorten", gzipMW(authMW(urlHandler.JSONPostHandler)))
-	router.Post("/api/shorten/batch", gzipMW(jsonEncMW(authMW(urlHandler.JSONBatchPostHandler))))
+	router.Get("/{id}", urlHandler.GetHandler)
+	router.Post("/", urlHandler.PostHandler)
 
-	router.Delete("/api/user/urls", gzipMW(jsonEncMW(authMW(urlHandler.UserDeleteHandler))))
+	router.Post("/api/shorten", urlHandler.JSONPostHandler)
+	router.Post("/api/shorten/batch", jsonEncMW(urlHandler.JSONBatchPostHandler))
 
-	router.Get("/api/user/urls", gzipMW(authMW(urlHandler.UserGetHandler)))
+	router.Delete("/api/user/urls", jsonEncMW(urlHandler.UserDeleteHandler))
 
-	router.Get("/ping", gzipMW(urlHandler.PingGetHandler)) // no auth cookie needed
+	router.Get("/api/user/urls", urlHandler.UserGetHandler)
+
+	router.Get("/ping", urlHandler.PingGetHandler)
 
 	return router
 }
