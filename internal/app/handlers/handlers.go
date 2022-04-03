@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sbxb/shorty/internal/app/config"
+	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/psql"
 	u "github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -35,7 +37,11 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 
 	url, err := uh.store.GetURL(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
+		if IsDeletedError(err) {
+			http.Error(w, "Record deleted", http.StatusGone)
+		} else {
+			http.Error(w, "Server failed to process URL", http.StatusInternalServerError)
+		}
 		return
 	}
 	if url == "" {
@@ -51,19 +57,7 @@ func (uh URLHandler) GetHandler(w http.ResponseWriter, r *http.Request) {
 // и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой
 // строки в теле ...
 func (uh URLHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
-	var reader io.Reader
-	if r.Header.Get("Content-Encoding") == "gzip" {
-		gz, err := gzip.NewReader(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		reader = gz
-		defer gz.Close()
-	} else {
-		reader = r.Body
-	}
-	b, err := io.ReadAll(reader)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Server failed to read the request's body", http.StatusInternalServerError)
 		return
@@ -120,11 +114,6 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 	const ContentType = "application/json"
 	batch := []u.BatchURLRequestEntry{}
 
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
-
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
@@ -152,12 +141,10 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 		respBatch = append(respBatch, ne)
 	}
 
-	// Storage staff starts here
 	if err := uh.store.AddBatchURL(r.Context(), respBatch, userID); err != nil {
 		http.Error(w, "Server failed to store URL(s)", http.StatusInternalServerError)
 		return
 	}
-	// Storage stuff stops here
 
 	for i := range respBatch {
 		respBatch[i].ShortURL = uh.config.BaseURL + "/" + respBatch[i].ShortURL
@@ -180,11 +167,6 @@ func (uh URLHandler) JSONBatchPostHandler(w http.ResponseWriter, r *http.Request
 func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 	var req u.URLRequest
-
-	if r.Header.Get("Content-Type") != ContentType {
-		http.Error(w, "Bad request: Content-Type should be "+ContentType, http.StatusBadRequest)
-		return
-	}
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -234,8 +216,56 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jr)
 }
 
+// UserDeleteHandler process DELETE /api/user/urls request
+// ... асинхронный хендлер DELETE /api/user/urls, который принимает список
+// идентификаторов сокращённых URL для удаления в формате:
+// [ "a", "b", "c", "d", ...]
+// В случае успешного приёма запроса хендлер должен возвращать HTTP-статус
+// 202 Accepted. Фактический результат удаления может происходить позже -
+// каким-либо образом оповещать пользователя об успешности или
+// неуспешности не нужно.
+// Успешно удалить URL может пользователь, его создавший.
+// При запросе удалённого URL с помощью хендлера GET /{id} нужно вернуть
+// статус 410 Gone.
+func (uh URLHandler) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var deleteIDs []string
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	if err := dec.Decode(&deleteIDs); err != nil {
+		http.Error(w, "Bad request: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(deleteIDs) == 0 {
+		http.Error(w, "Bad request: no ids provided", http.StatusBadRequest)
+		return
+	}
+
+	userID := GetUserID(r.Context())
+
+	go func() {
+		if uh.config.DatabaseDSN == "" {
+			// Either MapStorage or FileMapStorage is used (for testing
+			// purposes only), delete batch straightforward since map-based
+			// storage can not really benefit from concurrency due to heavy
+			// locking and fullscan
+			err := uh.store.DeleteBatch(context.Background(), deleteIDs, userID)
+			if err != nil {
+				logger.Warningf("UserDeleteHandler : DeleteBatch failed: %v", err)
+			}
+		} else {
+			// Real Database is used, increment 14 requires some concurrency here
+			ConcurrentDeleteBatch(uh.store, deleteIDs, userID)
+		}
+	}()
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
 // UserGetHandler process GET /user/urls request
-// ... хендлер GET /user/urls, который сможет вернуть пользователю все
+// ... хендлер GET /api/user/urls, который сможет вернуть пользователю все
 // когда-либо сокращённые им URL в формате:
 // [
 //     {
@@ -248,9 +278,9 @@ func (uh URLHandler) JSONPostHandler(w http.ResponseWriter, r *http.Request) {
 func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	const ContentType = "application/json"
 
-	uid := GetUserID(r.Context())
+	userID := GetUserID(r.Context())
 
-	urls, _ := uh.store.GetUserURLs(r.Context(), uid)
+	urls, _ := uh.store.GetUserURLs(r.Context(), userID)
 
 	if len(urls) == 0 {
 		w.WriteHeader(http.StatusNoContent)
@@ -276,7 +306,7 @@ func (uh URLHandler) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 // данных. При успешной проверке хендлер должен вернуть HTTP-статус 200 OK,
 // при неуспешной — 500 Internal Server Error ...
 func (uh URLHandler) PingGetHandler(w http.ResponseWriter, r *http.Request) {
-	dbStore, ok := uh.store.(*storage.DBStorage)
+	dbStore, ok := uh.store.(*psql.DBStorage)
 	if !ok {
 		http.Error(w, "Server failed to open DB", http.StatusInternalServerError)
 		return

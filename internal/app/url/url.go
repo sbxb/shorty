@@ -25,8 +25,6 @@ type BatchURLRequestEntry struct {
 	OriginalURL   string `json:"original_url"`
 }
 
-//type BatchURLResponse []BatchURLResponseEntry
-
 type BatchURLEntry struct {
 	CorrelationID string `json:"correlation_id"`
 	OriginalURL   string `json:"-"`

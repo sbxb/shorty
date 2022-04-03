@@ -20,11 +20,21 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
+func gzipMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			next.ServeHTTP(w, r)
 			return
+		}
+
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer gz.Close()
+			r.Body = gz
 		}
 
 		gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
@@ -40,7 +50,7 @@ func gzipWrapper(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
+func authMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("user_id")
 		uid := ""
@@ -61,5 +71,17 @@ func cookieAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		ctx := context.WithValue(r.Context(), auth.ContextUserIDKey, uid)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func jsonEncMW(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const ContentType = "application/json"
+
+		if strings.ToLower(r.Header.Get("Content-Type")) != ContentType {
+			http.Error(w, "Content-Type should be "+ContentType, http.StatusUnsupportedMediaType)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }

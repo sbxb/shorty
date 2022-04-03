@@ -1,13 +1,13 @@
-package storage
+package inmemory
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/sbxb/shorty/internal/app/logger"
+	"github.com/sbxb/shorty/internal/app/storage"
 	"github.com/sbxb/shorty/internal/app/url"
 )
 
@@ -20,7 +20,7 @@ type FileMapStorage struct {
 }
 
 // FileMapStorage implements Storage interface
-var _ Storage = (*FileMapStorage)(nil)
+var _ storage.Storage = (*FileMapStorage)(nil)
 
 func NewFileMapStorage(filename string) (*FileMapStorage, error) {
 	ms, _ := NewMapStorage()
@@ -49,13 +49,15 @@ func (st *FileMapStorage) LoadRecordsFromFile() error {
 		if len(input) != 2 {
 			continue
 		}
-		parts := strings.SplitN(input[1], "|", 2)
+		parts := strings.SplitN(input[1], "|", 3)
 		ue := url.URLEntry{
 			ShortURL:    input[0],
-			OriginalURL: parts[1],
+			OriginalURL: parts[2],
 		}
 		userID := parts[0]
-		st.AddURL(context.Background(), ue, userID)
+
+		st.data[ue.ShortURL] = userID + "|" + parts[1] + "|" + ue.OriginalURL
+		logger.Debugf("Loaded from file ==> [%s] :: [%s]", ue.ShortURL, st.data[ue.ShortURL])
 	}
 
 	if err := scanner.Err(); err != nil {

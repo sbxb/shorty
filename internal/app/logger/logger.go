@@ -65,6 +65,18 @@ func Fatalln(args ...interface{}) {
 	std.l.Fatalln(args...)
 }
 
+func Debug(args ...interface{}) {
+	if level <= DEBUG && level != NONE {
+		println(DEBUG, args...)
+	}
+}
+
+func Debugf(format string, args ...interface{}) {
+	if level <= DEBUG && level != NONE {
+		printf(DEBUG, format, args...)
+	}
+}
+
 func Info(args ...interface{}) {
 	if level <= INFO && level != NONE {
 		println(INFO, args...)

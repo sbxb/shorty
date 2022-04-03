@@ -1,4 +1,4 @@
-package storage
+package psql
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sbxb/shorty/internal/app/storage"
 	"github.com/sbxb/shorty/internal/app/url"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -20,7 +21,7 @@ type DBStorage struct {
 }
 
 // DBStorage implements Storage interface
-var _ Storage = (*DBStorage)(nil)
+var _ storage.Storage = (*DBStorage)(nil)
 
 // if it takes more than 2 seconds to ping the database, then database
 // is considered unavailable
@@ -59,6 +60,7 @@ func createTables(db *sql.DB, urlTable string) error {
 		id INT primary key GENERATED ALWAYS AS IDENTITY,
 		url_id VARCHAR(512) NOT NULL,
 		user_id VARCHAR(512) NOT NULL,
+		deleted BOOLEAN NOT NULL DEFAULT false,
 		original_url TEXT NOT NULL,
 		UNIQUE (url_id)
 	)`
@@ -88,7 +90,7 @@ func (st *DBStorage) AddURL(ctx context.Context, ue url.URLEntry, userID string)
 	result, err := st.db.ExecContext(ctx, AddURLQuery, ue.ShortURL, userID, ue.OriginalURL)
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
-			return NewIDConflictError(ue.ShortURL)
+			return storage.NewIDConflictError(ue.ShortURL)
 		}
 		return fmt.Errorf("DBStorage: AddURL: %v", err)
 	}
@@ -131,12 +133,15 @@ func (st *DBStorage) AddBatchURL(ctx context.Context, batch []url.BatchURLEntry,
 // never an empty string)
 func (st *DBStorage) GetURL(ctx context.Context, id string) (string, error) {
 	var url string
+	var deleted bool
 
-	GetURLQuery := `SELECT original_url FROM ` + st.urlTable + ` WHERE 
+	GetURLQuery := `SELECT original_url, deleted FROM ` + st.urlTable + ` WHERE 
 		url_id=$1`
-	err := st.db.QueryRowContext(ctx, GetURLQuery, id).Scan(&url)
+	err := st.db.QueryRowContext(ctx, GetURLQuery, id).Scan(&url, &deleted)
 
 	switch {
+	case deleted:
+		return "", storage.NewURLDeletedError(id)
 	case err == sql.ErrNoRows:
 		return "", nil
 	case err != nil:
@@ -174,6 +179,29 @@ func (st *DBStorage) GetUserURLs(ctx context.Context, userID string) ([]url.URLE
 	}
 
 	return res, nil
+}
+
+func (st *DBStorage) DeleteBatch(ctx context.Context, ids []string, userID string) error {
+	tx, err := st.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`UPDATE ` + st.urlTable + ` SET deleted=true
+		WHERE url_id=$1 AND user_id=$2 AND deleted=false`)
+	if err != nil {
+		return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+	}
+	defer stmt.Close()
+
+	for _, id := range ids {
+		if _, err = stmt.Exec(id, userID); err != nil {
+			return fmt.Errorf("DBStorage: DeleteBatch: %v", err)
+		}
+	}
+
+	return tx.Commit()
 }
 
 // Ping pings the database

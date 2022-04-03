@@ -1,10 +1,11 @@
-package storage_test
+package psql_test
 
 // import (
 // 	"context"
 // 	"testing"
 
 // 	"github.com/sbxb/shorty/internal/app/storage"
+// 	"github.com/sbxb/shorty/internal/app/storage/psql"
 // 	"github.com/sbxb/shorty/internal/app/url"
 
 // 	"github.com/stretchr/testify/assert"
@@ -27,7 +28,7 @@ package storage_test
 // 		},
 // 	}
 
-// 	store, err := storage.NewDBStorage(dsn)
+// 	store, err := psql.NewDBStorage(dsn)
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
@@ -49,7 +50,7 @@ package storage_test
 // 		},
 // 	}
 
-// 	store, err := storage.NewDBStorage(dsn)
+// 	store, err := psql.NewDBStorage(dsn)
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
@@ -71,7 +72,7 @@ package storage_test
 // 		},
 // 	}
 
-// 	store, err := storage.NewDBStorage(dsn)
+// 	store, err := psql.NewDBStorage(dsn)
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
@@ -89,7 +90,7 @@ package storage_test
 // func TestDBStorage_Get_Nonexistent(t *testing.T) {
 // 	id := "nonexistent_id"
 
-// 	store, err := storage.NewDBStorage(dsn)
+// 	store, err := psql.NewDBStorage(dsn)
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
@@ -105,7 +106,7 @@ package storage_test
 // 		OriginalURL: "http://example.com",
 // 	}
 
-// 	store, err := storage.NewDBStorage(dsn)
+// 	store, err := psql.NewDBStorage(dsn)
 // 	require.NoError(t, err)
 // 	_ = store.Truncate()
 
@@ -117,4 +118,45 @@ package storage_test
 
 // 	var conflictError *storage.IDConflictError
 // 	require.ErrorAs(t, err, &conflictError)
+// }
+
+// func TestDBStorage_Batch_Add_Delete(t *testing.T) {
+// 	batch := []url.BatchURLEntry{
+// 		{
+// 			OriginalURL: "http://example.com",
+// 			ShortURL:    "/5agFZWrIb6Ej21QvYUNBL3",
+// 		},
+// 		{
+// 			OriginalURL: "http://example.org",
+// 			ShortURL:    "/6EH6vwAy9dOyyNbopTS6M4",
+// 		},
+// 	}
+
+// 	store, err := psql.NewDBStorage(dsn)
+// 	require.NoError(t, err)
+// 	_ = store.Truncate()
+
+// 	err = store.AddBatchURL(context.Background(), batch, "")
+// 	require.NoError(t, err)
+
+// 	for _, ue := range batch {
+// 		urlReturned, _ := store.GetURL(context.Background(), ue.ShortURL)
+// 		require.NoError(t, err)
+
+// 		assert.Equal(t, urlReturned, ue.OriginalURL)
+// 	}
+
+// 	ids := make([]string, len(batch))
+// 	for _, ue := range batch {
+// 		ids = append(ids, ue.ShortURL)
+// 	}
+
+// 	err = store.DeleteBatch(context.Background(), ids, "")
+// 	require.NoError(t, err)
+
+// 	for _, ue := range batch {
+// 		_, err = store.GetURL(context.Background(), ue.ShortURL)
+// 		var deletedError *storage.URLDeletedError
+// 		require.ErrorAs(t, err, &deletedError)
+// 	}
 // }

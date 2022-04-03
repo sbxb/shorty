@@ -1,10 +1,10 @@
-package storage_test
+package inmemory_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/inmemory"
 	"github.com/sbxb/shorty/internal/app/url"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 func TestFileMapStorage_Write_And_Read_File(t *testing.T) {
 	tmpFileName := t.TempDir() + "/" + "test.db"
 
-	store, err := storage.NewFileMapStorage(tmpFileName)
+	store, err := inmemory.NewFileMapStorage(tmpFileName)
 
 	require.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestFileMapStorage_Write_And_Read_File(t *testing.T) {
 	store.Close()
 
 	// Reading all the items written previously
-	store, err = storage.NewFileMapStorage(tmpFileName)
+	store, err = inmemory.NewFileMapStorage(tmpFileName)
 
 	require.NoError(t, err)
 

@@ -10,6 +10,8 @@ import (
 	"github.com/sbxb/shorty/internal/app/config"
 	"github.com/sbxb/shorty/internal/app/logger"
 	"github.com/sbxb/shorty/internal/app/storage"
+	"github.com/sbxb/shorty/internal/app/storage/inmemory"
+	"github.com/sbxb/shorty/internal/app/storage/psql"
 )
 
 func main() {
@@ -25,9 +27,9 @@ func main() {
 	var store storage.Storage
 
 	if cfg.DatabaseDSN != "" {
-		store, err = storage.NewDBStorage(cfg.DatabaseDSN)
+		store, err = psql.NewDBStorage(cfg.DatabaseDSN)
 	} else {
-		store, err = storage.NewFileMapStorage(cfg.FileStoragePath)
+		store, err = inmemory.NewFileMapStorage(cfg.FileStoragePath)
 	}
 	if err != nil {
 		logger.Fatalln(err)
